@@ -58,3 +58,8 @@ A live leaderboard while you play, named CPU golfers with their own styles, and 
 ## v3.9: Training
 - Training button on the career screen: driving range (power), short game (accuracy), putting (consistency), or a full camp; +1 for 1 event or +2 for 2 events (camp +1 all for 2); cost scales with tier
 - Temporary boost adds to gear in career shots, shown on the career screen and in the gear chip, expires automatically; saved in ts.career
+
+## v3.10: Challenge events
+- Career shootouts between events: Long Drive Shootout after event 2 and Closest to the Pin Shootout after event 5 of each season (play or skip)
+- vs the 4 rivals and 3 tour regulars; purse 60% of the tier purse (winner 50%, bigger than a regular-event win); CPU strength scales with level and tier
+- Uses the existing long drive / CTP modes with career level, gear and trail; CTP hole is a par 3 from your unlocked courses; regular LD/CTP records untouched; saved in ts.career

@@ -197,7 +197,7 @@ td.l,th.l{text-align:left}
 <div id="ldr" style="position:fixed;inset:0;z-index:9999;background:#0b1014;display:flex;align-items:center;justify-content:center;color:#e8eef2;font:700 28px/1 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;letter-spacing:.18em;transition:opacity .6s ease">LOADING…</div><div id="fps"></div><div id="gimme"><div class="gb"><b>GIMME</b><span id="gimmeS"></span></div></div>
 <script type="text/x-tour" id="gsrc">
 'use strict';
-const VERSION='v3.9';
+const VERSION='v3.10';
 const TAU=Math.PI*2,DEG=Math.PI/180;
 const clamp=(v,a,b)=>v<a?a:v>b?b:v,lerp=(a,b,t)=>a+(b-a)*t,smooth=t=>t*t*(3-2*t);
 const pad=n=>String(n).padStart(2,'0');
@@ -2820,9 +2820,9 @@ function crMakeField(C,E){const seed=(Date.now()^Math.floor(Math.random()*1e9))>
   while(field.length<TN_FIELD){const n=TN_FIRST[Math.floor(R()*TN_FIRST.length)]+' '+TN_LAST[Math.floor(R()*TN_LAST.length)];if(used.has(n))continue;used.add(n);field.push({n,o:+(tnGauss(R)*1.6).toFixed(2),sc:[]})}
   const mu=(CR_BASE[C.lvl]||0)+CR_TIERS[C.tier].mu;return{v:1,car:1,cid:E.cid,tee:E.tee,seed,diff:C.lvl,skill:null,mu,day:0,field,me:[],done:false,ev:E}}
 /* during career rounds: career level drives the swing meter, career golfer name/ball, and the live leaderboard reads the career event */
-{const _d=diffI;diffI=function(){const r=G.round;if(r&&r.car){const C=crLoad();if(C)return C.lvl}return _d()}}
-{const _o=ownerName;ownerName=function(){const r=G.round;if(r&&r.car){const C=crLoad();if(C)return C.name}return _o()}}
-{const _b=custBallRGB;custBallRGB=function(){const r=G.round;if(r&&r.car){const C=crLoad();if(C&&BALL_COLS[C.ball])return BALL_COLS[C.ball]}return _b()}}
+{const _d=diffI;diffI=function(){const r=G.round;if((r&&r.car)||G.crCh){const C=crLoad();if(C)return C.lvl}return _d()}}
+{const _o=ownerName;ownerName=function(){const r=G.round;if((r&&r.car)||G.crCh){const C=crLoad();if(C)return C.name}return _o()}}
+{const _b=custBallRGB;custBallRGB=function(){const r=G.round;if((r&&r.car)||G.crCh){const C=crLoad();if(C&&BALL_COLS[C.ball])return BALL_COLS[C.ball]}return _b()}}
 {const _l=tnLoad;tnLoad=function(){const r=G.round;if(r&&r.car){const C=crLoad();return C&&C.cur}return _l()}}
 function crStart(){const C=crLoad();if(!C)return;if(!C.cur){C.cur=crMakeField(C,crEvent(C));crSave(C)}const t=C.cur;startRound(t.cid,t.tee,0,18,[{name:C.name,owner:1}],0,typeof todKey==='function'?todKey():undefined);if(G.round){G.round.car=1;G.round.tour=1;G.round.tday=0;store('ts.round',{r:G.round,hs:null})}}
 {const _fr=finishRound;finishRound=function(){const r=G.round;if(!(r&&r.car&&r.n===18))return _fr.apply(this,arguments);const tot=r.sc.reduce((a,b)=>a+b,0);try{const CP=cpar(CID[r.cid],r.tee);let fw=0,fwN=0,gir=0,pt=0,bd=0;for(let i=0;i<18;i++){if(CP[i]>3){fwN++;if(r.fir[i])fw++}if(r.gir[i])gir++;pt+=r.pt[i]||0;if(r.sc[i]&&r.sc[i]<CP[i])bd++}let eg=0,pa=0,bo=0;for(let i=0;i<18;i++){const d=r.sc[i]-CP[i];if(d<=-2)eg++;else if(d===0)pa++;else if(d>0)bo++}G.crRd={tp:tot-CP.reduce((a,b)=>a+b,0),fw,fwN,gir,pt,bd,eg,pa,bo,tot,cid:r.cid,dr:Math.max(0,...(r.dr||[]).filter(Number.isFinite))}}catch(e){G.crRd=null}delete r.tour;const out=_fr.apply(this,arguments);try{crFinish(tot)}catch(e){console.warn('career',e)}return out}}
@@ -2891,12 +2891,12 @@ function crGear(C){C.own=Array.isArray(C.own)?C.own:[];C.eq=C.eq&&typeof C.eq===
 function crEq(C,s){const id=C&&C.eq&&C.eq[s];return id&&SHOPI[id]&&C.own.includes(id)?SHOPI[id]:null}
 function crSlotFor(ci){const c=CLUBS[ci];return c.putter?'p':c.wood?'w':c.loft>=45?'g':'i'}
 function crStats(C,ci){const a=crEq(C,crSlotFor(ci)),b=crEq(C,'b');const z={pow:0,acc:0,con:0};for(const x of[a,b])if(x){z.pow+=x.pow;z.acc+=x.acc;z.con+=x.con}return z}
-{const _x=executeShot;executeShot=function(inp){const r=G.round;if(r&&r.car&&inp){const C=crLoad();if(C){crGear(C);const z=crStats(C,G.club);G.crLast=z;
+{const _x=executeShot;executeShot=function(inp){const r=G.round;if(((r&&r.car)||G.crCh)&&inp){const C=crLoad();if(C){crGear(C);const z=crStats(C,G.club);G.crLast=z;
    if(G.club===PUTTER||Number.isFinite(inp.ft)){if(Number.isFinite(inp.err))inp.err*=1-.04*z.acc-.02*z.con}
    else{const sh=SHAPES[G.shape]||SHAPES[0];const ka=1-.03*z.acc,kc=1-.05*z.con;if(Number.isFinite(inp.face))inp.face=sh.f+(inp.face-sh.f)*ka;if(Number.isFinite(inp.path))inp.path=sh.p+(inp.path-sh.p)*ka;
      if(Number.isFinite(inp.sx))inp.sx*=kc;if(Number.isFinite(inp.sy))inp.sy*=kc;if(Number.isFinite(inp.power))inp.power*=1+.01*z.pow}}}return _x.apply(this,arguments)}}
-{const _t=custTrailRGB;custTrailRGB=function(){const r=G.round;if(r&&r.car){const C=crLoad();const t=C&&crGear(C)&&crEq(C,'t');if(t)return t.rgb}return _t()}}
-{const _o=custTrailOn;custTrailOn=function(){const r=G.round;if(r&&r.car){const C=crLoad();return !!(C&&crGear(C)&&crEq(C,'t'))}return _o()}}/* v3.6: career trail = only the pro-shop trail */
+{const _t=custTrailRGB;custTrailRGB=function(){const r=G.round;if((r&&r.car)||G.crCh){const C=crLoad();const t=C&&crGear(C)&&crEq(C,'t');if(t)return t.rgb}return _t()}}
+{const _o=custTrailOn;custTrailOn=function(){const r=G.round;if((r&&r.car)||G.crCh){const C=crLoad();return !!(C&&crGear(C)&&crEq(C,'t'))}return _o()}}/* v3.6: career trail = only the pro-shop trail */
 function crBuy(id){const C=crLoad();const it=SHOPI[id];if(!C||!it)return false;crGear(C);if(C.own.includes(id))return false;if(C.cash<it.p)return false;C.cash-=it.p;C.own.push(id);C.eq[it.s]=id;crSave(C);return true}
 function crEquip(s,id){const C=crLoad();if(!C)return;crGear(C);if(id&&!C.own.includes(id))return;if(id)C.eq[s]=id;else delete C.eq[s];crSave(C)}
 function showShop(slot){const C=crLoad();if(!C){showCareer();return}crGear(C);slot=slot||'w';const bar=(k,v,col)=>`<div style="display:flex;align-items:center;gap:6px;font-size:11px"><span style="width:82px;opacity:.7">${k}</span><span style="flex:1;height:6px;background:#22303a;border-radius:3px;overflow:hidden"><span style="display:block;height:100%;width:${v*20}%;background:${col}"></span></span><span style="width:22px;text-align:right">+${v}</span></div>`;
@@ -2915,7 +2915,7 @@ function showShop(slot){const C=crLoad();if(!C){showCareer();return}crGear(C);sl
 
 /* ================= v3.5: Career Hall of Fame + level ups + gear indicator ================= */
 const CR_METER=[.6,.82,1.1,1.42,1.75,2.1];/* career swing meter speed per level: each Hall of Fame = ~30% faster */
-function crMeterK(){const r=G.round;if(!(r&&r.car))return 0;const C=crLoad();return C?CR_METER[C.lvl]||0:0}
+function crMeterK(){const r=G.round;if(!((r&&r.car)||G.crCh))return 0;const C=crLoad();return C?CR_METER[C.lvl]||0:0}
 function crHof(C,why,send){C.hof=Array.isArray(C.hof)?C.hof:[];const from=C.lvl;C.hof.push({s:send?send.s:C.season,lvl:from,why,date:crDay(),earn:C.earn,wins:C.wins});
   if(C.lvl<5){C.lvl++;C.tier=0;C.tpts=0;return{why,from,to:C.lvl}}C.maxed=1;C.tier=0;C.tpts=0;return{why,from,to:5,max:1}}
 function showHofScreen(h){const C=crLoad();const n=(C.hof||[]).length;
@@ -2994,6 +2994,33 @@ function showTraining(){const C=crLoad();if(!C){showCareer();return}const cur=cr
   <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px">${TRAIN.map(t=>{const c=crTrnCost(C,t);const on=cur===t;return`<div style="background:#121a20;border-radius:12px;padding:10px;display:flex;justify-content:space-between;align-items:center;gap:8px;${on?'outline:2px solid #3fe0b0':''}"><div><div style="font-weight:800">${esc(t.n)}</div><div style="font-size:13px;opacity:.8">${esc(t.f)}: ${[t.acc&&'ACC +'+t.acc,t.pow&&'PWR +'+t.pow,t.con&&'CON +'+t.con].filter(Boolean).join(' · ')} · next ${t.ev} event${t.ev>1?'s':''}</div></div>${on?'<b style="color:#3fe0b0">ACTIVE</b>':cur?'':`<button class="btn" data-tr="${t.id}" style="padding:6px 12px;margin:0;width:auto;${C.cash<c?'opacity:.45':''}">${crMoney(c)}</button>`}</div>`}).join('')}</div><div id="trnMsg" class="gnote" style="min-height:18px"></div></div>`);
   $('tnBk').onclick=showCareer;s.querySelector('#trnScr').addEventListener('click',e=>{const b=e.target.closest('[data-tr]');if(!b)return;if(crTrnBuy(b.dataset.tr))showTraining();else $('trnMsg').textContent='Not enough prize money yet.'})}
 {const _sc=showCareer;showCareer=function(){const out=_sc.apply(this,arguments);try{const p=$('crPlay');const C=crLoad();if(p&&C&&!$('crTrn')){const b=document.createElement('button');b.className='btn alt';b.id='crTrn';b.style.marginTop='8px';const l=crTrnLabel(C);b.innerHTML=l?`Training · active<small style="color:#7ab8ff">${esc(l)}</small>`:'Training<small>Spend a little prize money for a small boost in your next event or two</small>';b.onclick=showTraining;p.before(b)}}catch(e){console.warn(e)}return out}}
+
+/* ================= v3.10: Career challenge events (long drive / closest to the pin shootouts between events) ================= */
+const CH_AFTER={2:'ld',5:'ctp'};/* offered after the 2nd and 5th events of each season */
+function crChOffer(C){if(!C)return null;const t=CH_AFTER[C.ev];if(!t)return null;const c=C.chal;if(c&&c.s===C.season&&c.ev===C.ev)return c.done?null:c;return{s:C.season,ev:C.ev,type:t,done:0}}
+function crChPurse(C){return Math.round(CR_TIERS[C.tier].purse*(1+.25*C.lvl)*.6/100)*100}
+function crChPays(P){return[.5,.25,.12,.06,.04,.03,0,0].map(x=>Math.round(P*x/10)*10)}
+function crChField(C,type,seed){const R=tnRng(seed);const names=[...CR_RIVALS,...CR_REGULARS.slice(0,3)];return names.map((n,i)=>{const rv=i<4;let v;
+  if(type==='ld'){v=Math.round([252,262,272,282,292,302][C.lvl]+C.tier*5+(rv?6:0)+tnGauss(R)*9)}else{v=+([24,18,13,9,6.5,4.5][C.lvl]*(1-.08*C.tier)*(rv?.85:1)*Math.exp(tnGauss(R)*.45)).toFixed(1)}return{n,v,rv}})}
+function crChPick(C){const L=[];for(const c of COURSES)if(crCourseOK(C,c.id)&&GEO[c.id])c.par.forEach((x,i)=>{if(x===3)L.push([c.id,i+1])});const P=L.length?L:CTP_POOL.filter(([c,h])=>CID[c]&&CID[c].par[h-1]===3);const R=tnRng(C.season*7+C.ev*13+1);return P[Math.floor(R()*P.length)]}
+function crChStart(){const C=crLoad();const o=crChOffer(C);if(!o)return;o.seed=o.seed||((Date.now()^Math.floor(Math.random()*1e9))>>>0);C.chal=o;crSave(C);G.crCh={type:o.type,seed:o.seed};
+  if(o.type==='ld'){startLd()}else{const [cid,h]=crChPick(C);const T=ctpToday();const c=CID[cid];G.menuCtp=Object.assign({},T,{cid,h,key:'car'+o.seed,label:c.name.replace(/ (Golf|Country) Club.*$/,'').replace(/ \(.*\)$/,'')+' · hole '+h});startCtp()}}
+function crChFinish(type,mine){const C=crLoad();G.crCh=null;if(!C||!C.chal)return leaveToMenu();const o=C.chal;const F=crChField(C,type,o.seed);const me={n:C.name,v:mine,me:true};const L=F.concat([me]);
+  if(type==='ld')L.sort((a,b)=>b.v-a.v||(a.me?-1:b.me?1:0));else L.sort((a,b)=>a.v-b.v||(a.me?-1:b.me?1:0));L.forEach((x,i)=>x.pos=i+1);const P=crChPurse(C),pays=crChPays(P);const pos=me.pos;const pay=pays[pos-1]||0;
+  C.cash+=pay;C.earn+=pay;o.done=1;o.pos=pos;o.pay=pay;o.v=mine;C.chres=Array.isArray(C.chres)?C.chres:[];C.chres.push({s:o.s,ev:o.ev,type,pos,pay,v:mine});crSave(C);
+  const fmt=v=>type==='ld'?(v>0?v+' yds':'foul'):(v<99?fmtFt(v/3):'no score');
+  G.phase='done';show('scSetup',`<div class="pn" id="chRes" style="max-width:820px"><div class="hdr"><h2>${type==='ld'?'Long Drive Shootout':'Closest to the Pin Shootout'}</h2></div>
+  <div style="text-align:center;margin:6px 0 12px">${pos===1?'<div style="font-size:52px;line-height:1">🏆</div><div style="font:900 28px/1.1 system-ui,sans-serif;color:#ffd24a">SHOOTOUT CHAMPION!</div>':`<div style="font:900 24px/1.1 system-ui,sans-serif">You finished ${crOrd(pos)} of ${L.length}</div>`}<div style="margin-top:6px">Your best: <b>${fmt(mine)}</b> · <b style="color:#3fe0b0">+${crMoney(pay)}</b></div></div>
+  <table style="width:100%;border-collapse:collapse;font-size:14px;text-align:center"><tr style="opacity:.7"><th>Pos</th><th style="text-align:left">Player</th><th>Best</th><th>Prize</th></tr>${L.map(x=>`<tr style="${x.me?'background:rgba(63,224,176,.18);font-weight:800':''}"><td>${x.pos}</td><td style="text-align:left">${esc(x.n)}${x.me?' (you)':x.rv?' <small style="color:#ff9a6a">RIVAL</small>':''}</td><td>${fmt(x.v)}</td><td>${crMoney(pays[x.pos-1]||0)}</td></tr>`).join('')}</table>
+  <button class="btn c" id="chBk" style="margin-top:14px">Career</button></div>`);if(pos===1)setTimeout(()=>custBoom(null,true),300);$('chBk').onclick=()=>{leaveToMenu();showCareer()}}
+/* CTP results are yards in G.ctpRes (fmtFt takes yards); keep yards*3 = feet for the table */
+{const _c=ctpDone;ctpDone=function(T){if(G.crCh&&G.crCh.type==='ctp'){const b=Math.min(...G.ctpRes);return crChFinish('ctp',b<99?+(b*3).toFixed(1):999)}return _c.apply(this,arguments)}}
+{const _l=ldDone;ldDone=function(T){if(G.crCh&&G.crCh.type==='ld'){return crChFinish('ld',Math.max(0,...G.ldRes))}return _l.apply(this,arguments)}}
+{const _m=leaveToMenu;leaveToMenu=function(){G.crCh=null;return _m.apply(this,arguments)}}
+function crChSkip(){const C=crLoad();const o=crChOffer(C);if(!o)return;o.done=1;o.skip=1;C.chal=o;crSave(C);showCareer()}
+{const _sc=showCareer;showCareer=function(){const out=_sc.apply(this,arguments);try{const p=$('crPlay');const C=crLoad();const o=crChOffer(C);if(p&&o&&!$('crCh')&&!C.cur){const P=crChPurse(C);const d=document.createElement('div');d.id='crCh';d.style.cssText='background:linear-gradient(180deg,#2a2412,#15130b);border:1px solid #5a4a1a;border-radius:12px;padding:10px;margin-top:10px';
+   d.innerHTML=`<div style="font-weight:800;color:#ffd24a">CHALLENGE EVENT · ${o.type==='ld'?'Long Drive Shootout':'Closest to the Pin Shootout'}</div><div style="font-size:13px;opacity:.85;margin-top:2px">One-off shootout before your next event vs the rivals and tour regulars. ${o.type==='ld'?'6 drives, longest in the grid wins.':'5 balls at a par 3, closest wins.'} Purse ${crMoney(P)} (winner ${crMoney(crChPays(P)[0])}). Your gear and level apply.</div>
+   <div style="display:flex;gap:8px;margin-top:8px"><button class="btn" id="crChGo" style="margin:0">Play shootout</button><button class="btn alt" id="crChSk" style="margin:0;width:auto">Skip</button></div>`;p.before(d);$('crChGo').onclick=crChStart;$('crChSk').onclick=crChSkip}}catch(e){console.warn(e)}return out}}
 
 </script>
 <script>(function(){function boot(){var s=document.createElement('script');s.text=document.getElementById('gsrc').textContent;document.body.appendChild(s)}
