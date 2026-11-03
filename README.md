@@ -54,3 +54,7 @@ A live leaderboard while you play, named CPU golfers with their own styles, and 
 ## v3.8: Career stats
 - Stats button on the career screen: fairways hit, greens in regulation, putts per round, scoring average, longest drive, best round, rounds, wins/top 10, eagles, birdies, pars, bogeys
 - Recorded from every finished career round across all seasons and levels; saved in ts.career (old careers start empty)
+
+## v3.9: Training
+- Training button on the career screen: driving range (power), short game (accuracy), putting (consistency), or a full camp; +1 for 1 event or +2 for 2 events (camp +1 all for 2); cost scales with tier
+- Temporary boost adds to gear in career shots, shown on the career screen and in the gear chip, expires automatically; saved in ts.career

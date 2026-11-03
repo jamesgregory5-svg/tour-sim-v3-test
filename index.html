@@ -197,7 +197,7 @@ td.l,th.l{text-align:left}
 <div id="ldr" style="position:fixed;inset:0;z-index:9999;background:#0b1014;display:flex;align-items:center;justify-content:center;color:#e8eef2;font:700 28px/1 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;letter-spacing:.18em;transition:opacity .6s ease">LOADING…</div><div id="fps"></div><div id="gimme"><div class="gb"><b>GIMME</b><span id="gimmeS"></span></div></div>
 <script type="text/x-tour" id="gsrc">
 'use strict';
-const VERSION='v3.8';
+const VERSION='v3.9';
 const TAU=Math.PI*2,DEG=Math.PI/180;
 const clamp=(v,a,b)=>v<a?a:v>b?b:v,lerp=(a,b,t)=>a+(b-a)*t,smooth=t=>t*t*(3-2*t);
 const pad=n=>String(n).padStart(2,'0');
@@ -2933,7 +2933,7 @@ function showHofScreen(h){const C=crLoad();const n=(C.hof||[]).length;
 function crGearChip(){let el=$('crGearI');const r=G.round;const lv=$('tnLive');const on=r&&r.car&&G.mode==='round'&&lv&&lv.style.display!=='none';if(!on){if(el)el.style.display='none';return}
   const C=crLoad();if(!C)return;crGear(C);const z=crStats(C,G.club);const sl=crSlotFor(G.club);const it=crEq(C,sl),bl=crEq(C,'b');
   if(!el){el=document.createElement('div');el.id='crGearI';el.style.cssText='position:fixed;left:10px;z-index:12;width:196px;background:rgba(10,16,20,.72);border-radius:10px;color:#e8eef2;font:600 11px/1.35 system-ui,sans-serif;padding:5px 9px;pointer-events:none;box-sizing:border-box';document.body.appendChild(el)}
-  el.style.top=(lv.offsetTop+lv.offsetHeight+6)+'px';el.style.width=lv.style.width||'196px';el.style.display='block';const txt=`<b>${DIFF[C.lvl][0]}</b> · ${it?esc(it.n.replace(/ (Driver|Irons|Wedges|Putter)$/,'')):'Stock'}${bl?' · '+esc(bl.n.replace(/ Ball$/,'')):''}<br><span style="opacity:.75">ACC +${z.acc} · PWR +${z.pow} · CON +${z.con}</span>${typeof crSpon==='function'&&crSpon(C)?`<br><span style="color:#ffd24a">${esc(crSpon(C).n)}: ${esc(crSpon(C).goal)}</span>`:''}`;if(el.innerHTML!==txt)el.innerHTML=txt}
+  el.style.top=(lv.offsetTop+lv.offsetHeight+6)+'px';el.style.width=lv.style.width||'196px';el.style.display='block';const txt=`<b>${DIFF[C.lvl][0]}</b> · ${it?esc(it.n.replace(/ (Driver|Irons|Wedges|Putter)$/,'')):'Stock'}${bl?' · '+esc(bl.n.replace(/ Ball$/,'')):''}<br><span style="opacity:.75">ACC +${z.acc} · PWR +${z.pow} · CON +${z.con}</span>${typeof crSpon==='function'&&crSpon(C)?`<br><span style="color:#ffd24a">${esc(crSpon(C).n)}: ${esc(crSpon(C).goal)}</span>`:''}${typeof crTrnLabel==='function'&&crTrnLabel(C)?`<br><span style="color:#7ab8ff">${esc(crTrnLabel(C))}</span>`:''}`;if(el.innerHTML!==txt)el.innerHTML=txt}
 setInterval(()=>{try{crGearChip()}catch(e){}},700);
 
 /* ================= v3.6: fix pass: trophy-shelf button on every tournament-setup redraw; no duplicate resume for career rounds ================= */
@@ -2976,6 +2976,24 @@ function showCrStats(){const C=crLoad();if(!C){showCareer();return}const S=crSt(
    ${st('EAGLES+',S.eg)}${st('BIRDIES',S.bd)}${st('PARS',S.pa)}${st('BOGEYS+',S.bo)}</div>
   <button class="btn c" id="csB2" style="margin-top:14px">Career</button></div>`);$('csB').onclick=$('csB2').onclick=showCareer}
 {const _sc=showCareer;showCareer=function(){const out=_sc.apply(this,arguments);try{const t=$('crTro');if(t&&!$('crStats')){const b=document.createElement('button');b.className='btn alt';b.id='crStats';b.style.marginTop='8px';const C=crLoad();const n=crSt(C).n;b.innerHTML=`Stats<small>${n} career round${n===1?'':'s'} · fairways, greens, putts, longest drive, best round</small>`;b.onclick=showCrStats;t.before(b)}}catch(e){console.warn(e)}return out}}
+
+/* ================= v3.9: Career training (temporary stat boost for the next event or two) ================= */
+const TRAIN=[{id:'rng1',n:'Driving range session',f:'Power',pow:1,acc:0,con:0,ev:1,p:2000},{id:'rng2',n:'Driving range with a coach',f:'Power',pow:2,acc:0,con:0,ev:2,p:6000},
+ {id:'sg1',n:'Short-game session',f:'Accuracy',pow:0,acc:1,con:0,ev:1,p:2000},{id:'sg2',n:'Short-game clinic',f:'Accuracy',pow:0,acc:2,con:0,ev:2,p:6000},
+ {id:'pt1',n:'Putting green session',f:'Consistency',pow:0,acc:0,con:1,ev:1,p:2000},{id:'pt2',n:'Putting lab',f:'Consistency',pow:0,acc:0,con:2,ev:2,p:6000},
+ {id:'camp',n:'Full training camp',f:'All three',pow:1,acc:1,con:1,ev:2,p:15000}];
+function crTrnCost(C,t){return Math.round(t.p*(1+C.tier)/100)*100}
+function crTrn(C){const t=C&&C.trn;return t&&t.left>0&&TRAIN.find(x=>x.id===t.id)||null}
+function crTrnLabel(C){const t=crTrn(C);if(!t)return'';const b=[t.acc&&'ACC +'+t.acc,t.pow&&'PWR +'+t.pow,t.con&&'CON +'+t.con].filter(Boolean).join(' · ');return`Training: ${b} (${C.trn.left} event${C.trn.left===1?'':'s'} left)`}
+{const _s=crStats;crStats=function(C,ci){const z=_s.apply(this,arguments);const t=crTrn(C);if(t){z.pow+=t.pow;z.acc+=t.acc;z.con+=t.con}return z}}
+{const _f=crFinish;crFinish=function(){const had=(()=>{const C=crLoad();return !!(C&&C.cur&&crTrn(C))})();const out=_f.apply(this,arguments);if(had){try{const C=crLoad();C.trn.left--;if(C.trn.left<=0)delete C.trn;crSave(C)}catch(e){}}return out}}
+function crTrnBuy(id){const C=crLoad();const t=TRAIN.find(x=>x.id===id);if(!C||!t||crTrn(C))return false;const c=crTrnCost(C,t);if(C.cash<c)return false;C.cash-=c;C.trn={id,left:t.ev};crSave(C);return true}
+function showTraining(){const C=crLoad();if(!C){showCareer();return}const cur=crTrn(C);
+  const s=show('scSetup',`<div class="pn" id="trnScr" style="max-width:820px"><div class="hdr"><button class="ib" id="tnBk">‹</button><h2>Training</h2></div>
+  <div class="gnote">Prize money: <b style="color:#3fe0b0">${crMoney(C.cash)}</b>. A session gives a small <b>temporary</b> boost on top of your gear for your next event or two. One session at a time. ${cur?`Active now: <b>${esc(cur.n)}</b>, ${esc(crTrnLabel(C))}.`:''}</div>
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px">${TRAIN.map(t=>{const c=crTrnCost(C,t);const on=cur===t;return`<div style="background:#121a20;border-radius:12px;padding:10px;display:flex;justify-content:space-between;align-items:center;gap:8px;${on?'outline:2px solid #3fe0b0':''}"><div><div style="font-weight:800">${esc(t.n)}</div><div style="font-size:13px;opacity:.8">${esc(t.f)}: ${[t.acc&&'ACC +'+t.acc,t.pow&&'PWR +'+t.pow,t.con&&'CON +'+t.con].filter(Boolean).join(' · ')} · next ${t.ev} event${t.ev>1?'s':''}</div></div>${on?'<b style="color:#3fe0b0">ACTIVE</b>':cur?'':`<button class="btn" data-tr="${t.id}" style="padding:6px 12px;margin:0;width:auto;${C.cash<c?'opacity:.45':''}">${crMoney(c)}</button>`}</div>`}).join('')}</div><div id="trnMsg" class="gnote" style="min-height:18px"></div></div>`);
+  $('tnBk').onclick=showCareer;s.querySelector('#trnScr').addEventListener('click',e=>{const b=e.target.closest('[data-tr]');if(!b)return;if(crTrnBuy(b.dataset.tr))showTraining();else $('trnMsg').textContent='Not enough prize money yet.'})}
+{const _sc=showCareer;showCareer=function(){const out=_sc.apply(this,arguments);try{const p=$('crPlay');const C=crLoad();if(p&&C&&!$('crTrn')){const b=document.createElement('button');b.className='btn alt';b.id='crTrn';b.style.marginTop='8px';const l=crTrnLabel(C);b.innerHTML=l?`Training · active<small style="color:#7ab8ff">${esc(l)}</small>`:'Training<small>Spend a little prize money for a small boost in your next event or two</small>';b.onclick=showTraining;p.before(b)}}catch(e){console.warn(e)}return out}}
 
 </script>
 <script>(function(){function boot(){var s=document.createElement('script');s.text=document.getElementById('gsrc').textContent;document.body.appendChild(s)}
