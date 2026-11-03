@@ -197,7 +197,7 @@ td.l,th.l{text-align:left}
 <div id="ldr" style="position:fixed;inset:0;z-index:9999;background:#0b1014;display:flex;align-items:center;justify-content:center;color:#e8eef2;font:700 28px/1 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;letter-spacing:.18em;transition:opacity .6s ease">LOADING…</div><div id="fps"></div><div id="gimme"><div class="gb"><b>GIMME</b><span id="gimmeS"></span></div></div>
 <script type="text/x-tour" id="gsrc">
 'use strict';
-const VERSION='v3.4';
+const VERSION='v3.5';
 const TAU=Math.PI*2,DEG=Math.PI/180;
 const clamp=(v,a,b)=>v<a?a:v>b?b:v,lerp=(a,b,t)=>a+(b-a)*t,smooth=t=>t*t*(3-2*t);
 const pad=n=>String(n).padStart(2,'0');
@@ -1877,7 +1877,7 @@ const DIFF=[['Reggie',.6],['Easy',.8],['Medium',1],['Hard',1.2],['PGA',1.45],['W
 function diffI(){const v=store('ts.diff');return v===null||v===undefined||!DIFF[+v]?2:+v}
 function swValue(s,t){const k=s.k||1;if(s.phase==='up')return Math.min(1.15,(t-s.t0)*k/SW_UP);return s.pow-(t-s.tPow)*k/SW_DOWN}
 function swingTap(){if(G.phase!=='address'&&G.phase!=='putt'&&G.phase!=='swing')return;const t=swNow();let s=G.sw;
-  if(!s){G.sw={phase:'up',t0:t,pow:0,ft:0,putt:G.phase==='putt',k:DIFF[diffI()][1]};if(G.phase==='address')G.phase='swing';sfx('tick');return}
+  if(!s){G.sw={phase:'up',t0:t,pow:0,ft:0,putt:G.phase==='putt',k:(typeof crMeterK==='function'&&crMeterK())||DIFF[diffI()][1]};if(G.phase==='address')G.phase='swing';sfx('tick');return}
   if(s.putt){G.sw=null;const ft=s.ft;if(ft>.4)executeShot({ft});return}
   if(s.phase==='up'){s.pow=swValue(s,t);s.tPow=t;s.phase='down';sfx('tick');return}
   if(s.phase==='down')swingRelease(swValue(s,t),t)}
@@ -2799,7 +2799,7 @@ function showTrophies(back){const L=trLoad().slice().reverse();const s=show('scS
 /* ================= v3.3: Career mode (core) ================= */
 const CR_TIERS=[{n:'Regional',purse:25000,tee:-1,mu:2},{n:'Challenger',purse:80000,tee:1,mu:0},{n:'Pro',purse:300000,tee:0,mu:-1.5},{n:'Major Series',purse:1000000,tee:0,mu:-3}];
 const CR_COURSES=[['lookaway','fiveponds','prairie','shadowcreek','peachtree','crystal','chicago'],['bethpage','pacificdunes','oakhill','oaklandhills','muirfieldv','friars','fishers','seminole'],['sawgrass','riviera','tcc','lacc','wingedfoot','sandhills','ngla','merion'],['augusta','standrews','pebble','pinevalley','oakmont','shinnecock','cypress']];
-const CR_BASE=[4,2,0,-2,-4,-6];/* CPU field mean (to par) per career level Reggie..Woods */
+const CR_BASE=[4,1,-2,-4.5,-7,-9.5];/* CPU field mean (to par) per career level Reggie..Woods */
 const CR_RIVALS=['Bruno Vance','Dex Harlan','Miles Okoro','Tobias Wren'];
 const CR_REGULARS=['Hank Ostrow','Jules Marchetti','Ravi Desai','Colt Brannigan','Soren Ekdahl','Mateo Rios','Gus Pelletier','Ty Abernathy','Ollie Fenwick','Kenji Sato'];
 const CR_EVN=['Open','Classic','Invitational','Championship'];const CR_SEASON=8,CR_PROMO=1000;
@@ -2833,20 +2833,20 @@ function crFinish(tot){const C=crLoad();if(!C||!C.cur)return;const t=C.cur,E=t.e
   if(win){try{const L=trLoad();if(!L.some(z=>z.id===t.seed)){L.push({id:t.seed,cid:t.cid,course:CID[t.cid].name,tp:me.tp,tot,diff:DIFF[C.lvl][0],date:new Date().toISOString().slice(0,10),car:1,ev:E.name});store('ts.trophies',L)}}catch(e){}}
   const res={s:C.season,ev:C.ev+1,name:E.name,cid:t.cid,tier:C.tier,pos,tie:ties>1&&!note,tp:me.tp,tot,pts,pay};C.res.push(res);if(C.res.length>200)C.res.shift();
   let promo='';if(C.tier<3&&C.tpts>=CR_PROMO){C.tier++;C.tpts=0;C.maxT=Math.max(C.maxT,C.tier);promo=`Promoted to the ${CR_TIERS[C.tier].n} tier! New courses unlocked: ${CR_COURSES[C.tier].map(id=>CID[id].name.replace(/ \(.*\)$/,'')).join(', ')}.`}
-  C.cur=null;C.ev++;let send=null;if(C.ev>=CR_SEASON){send=crSeasonEnd(C)}crSave(C);crResult(T,me,res,note,promo,send)}
+  C.cur=null;C.ev++;let send=null,hof=null;if(win&&E.major)hof='Won the '+E.name.replace(/^Major: /,'')+' (a Major)';if(hof||C.ev>=CR_SEASON){send=crSeasonEnd(C);if(!hof&&send.rank===1)hof='Finished No. 1 in the season '+send.s+' rankings'}if(hof&&typeof crHof==='function')hof=crHof(C,hof,send);else hof=null;crSave(C);crResult(T,me,res,note,promo,send,hof)}
 function crRank(C){const L=[{n:C.name,p:C.spts,me:true}].concat([...CR_RIVALS,...CR_REGULARS].map(n=>({n,p:C.rp[n]||0,rv:CR_RIVALS.includes(n)})));L.sort((a,b)=>b.p-a.p||(a.me?-1:b.me?1:0));L.forEach((x,i)=>x.pos=i+1);return L}
 function crSeasonEnd(C){const L=crRank(C);const me=L.find(x=>x.me);const sr=C.res.filter(x=>x.s===C.season);
-  const h={s:C.season,lvl:C.lvl,tier:C.tier,rank:me.pos,pts:C.spts,wins:sr.filter(x=>x.pos===1).length,earn:sr.reduce((a,x)=>a+x.pay,0),best:Math.min(...sr.map(x=>x.pos))};C.hist.push(h);
+  const h={s:C.season,lvl:C.lvl,tier:Math.max(C.tier,...sr.map(x=>x.tier)),rank:me.pos,pts:C.spts,wins:sr.filter(x=>x.pos===1).length,earn:sr.reduce((a,x)=>a+x.pay,0),best:Math.min(...sr.map(x=>x.pos))};C.hist.push(h);
   C.season++;C.ev=0;C.spts=0;C.rp={};return h}
 function crMoney(x){return '$'+Math.round(x).toLocaleString()}
 function crOrd(n){const s=['th','st','nd','rd'],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0])}
-function crResult(T,me,res,note,promo,send){const C=crLoad();const top=T.rows.slice(0,10);const list=top.includes(me)?top:top.concat([me]);const tie=p=>T.rows.filter(x=>x.pos===p).length>1?'T':'';
+function crResult(T,me,res,note,promo,send,hof){const C=crLoad();const top=T.rows.slice(0,10);const list=top.includes(me)?top:top.concat([me]);const tie=p=>T.rows.filter(x=>x.pos===p).length>1?'T':'';
   const s=show('scSetup',`<div class="pn" id="crRes"><div class="hdr"><h2>${esc(res.name)}</h2></div>
   <div style="text-align:center;margin:6px 0 12px">${res.pos===1?'<div style="font-size:56px;line-height:1">🏆</div><div style="font:900 30px/1.1 system-ui,sans-serif;color:#ffd24a">CHAMPION!</div>':`<div style="font:900 26px/1.1 system-ui,sans-serif">You finished ${res.tie?'T':''}${crOrd(res.pos)}</div>`}
   <div style="margin-top:6px">${tnFmt(res.tp)} (${res.tot}) · <b style="color:#3fe0b0">+${crMoney(res.pay)}</b> · <b>+${res.pts} pts</b>${note?' · '+note:''}</div>${promo?`<div style="margin-top:8px;color:#ffd24a;font-weight:800">${esc(promo)}</div>`:''}
   ${send?`<div style="margin-top:8px;font-weight:800">Season ${send.s} complete: ranked No. ${send.rank} · ${send.wins} win${send.wins===1?'':'s'} · ${crMoney(send.earn)}</div>`:''}</div>
   <table style="width:100%;border-collapse:collapse;font-size:14px;text-align:center"><tr style="opacity:.7"><th>Pos</th><th style="text-align:left">Player</th><th>Score</th></tr>${list.map(x=>`<tr style="${x.me?'background:rgba(63,224,176,.18);font-weight:800':''}"><td>${tie(x.pos)}${x.pos}</td><td style="text-align:left">${esc(x.n)}${x.me?' (you)':`<small style="opacity:.6;margin-left:6px">${x.rv?'<b style="color:#ff9a6a">RIVAL</b> · ':''}${TN_STYLES[tnStyleI(x.n)].n}</small>`}</td><td><b>${tnFmt(x.tp)}</b></td></tr>`).join('')}</table>
-  <button class="btn c" id="crBk" style="margin-top:14px">Career</button></div>`);if(res.pos===1)setTimeout(()=>custBoom(null,true),300);$('crBk').onclick=showCareer}
+  ${hof?'<div style="text-align:center;margin-top:10px;font:900 22px/1.2 system-ui,sans-serif;color:#ffd24a">⭐ HALL OF FAME ⭐</div>':''}<button class="btn c" id="crBk" style="margin-top:14px">${hof?'Continue':'Career'}</button></div>`);if(res.pos===1)setTimeout(()=>custBoom(null,true),300);$('crBk').onclick=()=>{if(hof&&typeof showHofScreen==='function')showHofScreen(hof);else showCareer()}}
 function showCareerNew(){let ball='white';const draw=()=>{const nm=($('crNm')&&$('crNm').value)||ownerName();const s=show('scSetup',`<div class="pn"><div class="hdr"><button class="ib" id="crB">‹</button><h2>New career</h2></div>
   <div class="gnote">Create your golfer. You start on the Regional tier at the Reggie difficulty level. Finish high in 18-hole events to earn prize money and ranking points. ${CR_PROMO} points moves you up a tier, with tougher fields and harder courses.</div>
   <div class="sec">Name</div><input id="crNm" maxlength="16" value="${esc(nm)}" style="font:inherit;font-size:16px;padding:10px 12px;border-radius:10px;border:1px solid #3a4a55;background:#121a20;color:#fff;width:100%;box-sizing:border-box">
@@ -2909,6 +2909,29 @@ function showShop(slot){const C=crLoad();if(!C){showCareer();return}crGear(C);sl
   $('shB').onclick=showCareer;$('shT').onclick=e=>{const b=e.target.closest('button');if(b)showShop(b.dataset.s)};
   s.querySelector('#shopScr').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.buy){if(crBuy(b.dataset.buy))showShop(slot);else $('shMsg').textContent='Not enough prize money yet.'}else if(b.dataset.eq!==undefined){crEquip(slot,b.dataset.eq||null);showShop(slot)}})}
 {const _sc=showCareer;showCareer=function(){const out=_sc.apply(this,arguments);try{const p=$('crPlay');const C=crLoad();if(p&&C&&!$('crShop')){crGear(C);const b=document.createElement('button');b.className='btn alt';b.id='crShop';b.style.marginTop='8px';const n=SHOP_SLOTS.filter(([k])=>crEq(C,k)).length;b.innerHTML=`Pro shop<small>${crMoney(C.cash)} to spend · ${n} upgrade${n===1?'':'s'} equipped</small>`;b.onclick=()=>showShop();p.after(b)}}catch(e){console.warn(e)}return out}}
+
+/* ================= v3.5: Career Hall of Fame + level ups + gear indicator ================= */
+const CR_METER=[.6,.82,1.1,1.42,1.8,2.25];/* career swing meter speed per level: each Hall of Fame = ~30% faster */
+function crMeterK(){const r=G.round;if(!(r&&r.car))return 0;const C=crLoad();return C?CR_METER[C.lvl]||0:0}
+function crHof(C,why,send){C.hof=Array.isArray(C.hof)?C.hof:[];const from=C.lvl;C.hof.push({s:send?send.s:C.season,lvl:from,why,date:new Date().toISOString().slice(0,10),earn:C.earn,wins:C.wins});
+  if(C.lvl<5){C.lvl++;C.tier=0;C.tpts=0;return{why,from,to:C.lvl}}C.maxed=1;C.tier=0;C.tpts=0;return{why,from,to:5,max:1}}
+function showHofScreen(h){const C=crLoad();const n=(C.hof||[]).length;
+  if(h.max){show('scSetup',`<div class="pn" id="crHofS" style="text-align:center"><div style="font-size:72px;line-height:1;margin-top:6px">🏆⭐🏆</div><div style="font:900 34px/1.1 system-ui,sans-serif;color:#ffd24a;margin-top:8px">TOUR SIM CLEARED!</div>
+   <div style="margin-top:10px;font-size:16px">${esc(C.name)} has made the Hall of Fame at <b>Woods</b>, the highest level.</div><div class="gnote" style="margin-top:8px">${esc(h.why)}. Hall of Fame entries: <b>${n}</b> · career wins: <b>${C.wins}</b> · earnings: <b>${crMoney(C.earn)}</b>.<br>You can keep playing Woods seasons; every new Hall of Fame season gets added to your list.</div>
+   <button class="btn c" id="crHc" style="margin-top:16px">Career</button></div>`);$('crHc').onclick=showCareer;setTimeout(()=>custBoom(null,true),300);return}
+  const f=CR_METER[h.to]/CR_METER[h.from];const dcpu=(CR_BASE[h.from]-CR_BASE[h.to]).toFixed(1);
+  show('scSetup',`<div class="pn" id="crHofS" style="text-align:center"><div style="font-size:64px;line-height:1;margin-top:6px">⭐</div><div style="font:900 32px/1.1 system-ui,sans-serif;color:#ffd24a;margin-top:8px">HALL OF FAME</div>
+   <div style="margin-top:8px;font-size:16px">${esc(h.why)}.</div>
+   <div style="margin:14px auto;max-width:420px;background:#121a20;border-radius:12px;padding:12px;text-align:left;line-height:1.6">New season ${C.season} at <b style="color:#3fe0b0">${DIFF[h.to][0]}</b> (was ${DIFF[h.from][0]})<br>• Swing meter <b>${Math.round((f-1)*100)}% faster</b><br>• CPU fields about <b>${dcpu} shots per round stronger</b><br>• Back to the Regional tier; your unlocked courses stay open<br>• Your gear and ${crMoney(C.cash)} prize money carry over</div>
+   <button class="btn c" id="crHc">Career</button></div>`);$('crHc').onclick=showCareer;setTimeout(()=>custBoom(null,true),300)}
+{const _sc=showCareer;showCareer=function(){const out=_sc.apply(this,arguments);try{const C=crLoad();const t=$('crTro');if(C&&t&&!$('crHof')){const H=Array.isArray(C.hof)?C.hof:[];const d=document.createElement('div');d.id='crHof';
+   d.innerHTML=`<div class="sec">Hall of Fame${C.maxed?' · <span style="color:#ffd24a">TOUR SIM CLEARED</span>':''}</div>${H.length?`<table style="width:100%;font-size:13px">${H.map((h,i)=>`<tr><td>⭐ ${i+1}</td><td>S${h.s} · ${DIFF[h.lvl][0]}</td><td>${esc(h.why)}</td></tr>`).join('')}</table>`:`<div class="gnote">Win a Major or finish No. 1 in the season rankings to enter the Hall of Fame and move up a level (${DIFF.map(x=>x[0]).join(' → ')}).</div>`}`;t.before(d)}}catch(e){console.warn(e)}return out}}
+/* small equipped-gear chip under the live leaderboard during career rounds */
+function crGearChip(){let el=$('crGearI');const r=G.round;const lv=$('tnLive');const on=r&&r.car&&G.mode==='round'&&lv&&lv.style.display!=='none';if(!on){if(el)el.style.display='none';return}
+  const C=crLoad();if(!C)return;crGear(C);const z=crStats(C,G.club);const sl=crSlotFor(G.club);const it=crEq(C,sl),bl=crEq(C,'b');
+  if(!el){el=document.createElement('div');el.id='crGearI';el.style.cssText='position:fixed;left:10px;z-index:12;width:196px;background:rgba(10,16,20,.72);border-radius:10px;color:#e8eef2;font:600 11px/1.35 system-ui,sans-serif;padding:5px 9px;pointer-events:none;box-sizing:border-box';document.body.appendChild(el)}
+  el.style.top=(lv.offsetTop+lv.offsetHeight+6)+'px';el.style.display='block';const txt=`<b>${DIFF[C.lvl][0]}</b> · ${it?esc(it.n.replace(/ (Driver|Irons|Wedges|Putter)$/,'')):'Stock'}${bl?' · '+esc(bl.n.replace(/ Ball$/,'')):''}<br><span style="opacity:.75">ACC +${z.acc} · PWR +${z.pow} · CON +${z.con}</span>`;if(el.innerHTML!==txt)el.innerHTML=txt}
+setInterval(()=>{try{crGearChip()}catch(e){}},700);
 
 </script>
 <script>(function(){function boot(){var s=document.createElement('script');s.text=document.getElementById('gsrc').textContent;document.body.appendChild(s)}

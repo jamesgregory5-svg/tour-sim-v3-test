@@ -28,3 +28,10 @@ A live leaderboard while you play, named CPU golfers with their own styles, and 
 - Accuracy (less miss off aim line), power (carry), consistency (less strike variance) apply to real career shots; small upgrades; stock set = current clubs
 - Gear saved in ts.career (old career saves load)
 - Career live leaderboard shows the event name; Regional/Reggie field re-tuned so rivals contend (winning score around -2)
+
+## v3.5: Hall of Fame
+- Win a Major (Major Series event) or finish No. 1 in the season rankings = Hall of Fame entry + new season one level up (Reggie > Easy > Medium > Hard > PGA > Woods)
+- Each level: swing meter ~25-37% faster (career meter .6/.82/1.1/1.42/1.8/2.25x) and CPU fields ~2.5-3 shots per round stronger
+- Gear and prize money carry over; back to Regional tier, unlocked courses stay
+- Hall of Fame list on the career screen; TOUR SIM CLEARED screen at Woods
+- Equipped-gear chip (level, gear, stats for current club) under the live leaderboard in career rounds
