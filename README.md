@@ -10,3 +10,8 @@ Test builds of **Tour Sim v3**, based on v2.2.3. Play: https://jamesgregory5-svg
 
 ## Coming in v3.2: Tournament extras
 A live leaderboard while you play, named CPU golfers with their own styles, and a trophy shelf for past tournament wins.
+
+## v3.2
+- Live tournament leaderboard during rounds (top 5 + you, thru N; click header to collapse)
+- Named CPU golfers with styles: Long hitter, Steady putter, Risk taker, Grinder, Wedge wizard
+- Trophy shelf for tournament wins (new save key ts.trophies; old saves load unchanged)

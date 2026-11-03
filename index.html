@@ -197,7 +197,7 @@ td.l,th.l{text-align:left}
 <div id="ldr" style="position:fixed;inset:0;z-index:9999;background:#0b1014;display:flex;align-items:center;justify-content:center;color:#e8eef2;font:700 28px/1 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;letter-spacing:.18em;transition:opacity .6s ease">LOADING…</div><div id="fps"></div><div id="gimme"><div class="gb"><b>GIMME</b><span id="gimmeS"></span></div></div>
 <script type="text/x-tour" id="gsrc">
 'use strict';
-const VERSION='v3.1';
+const VERSION='v3.2';
 const TAU=Math.PI*2,DEG=Math.PI/180;
 const clamp=(v,a,b)=>v<a?a:v>b?b:v,lerp=(a,b,t)=>a+(b-a)*t,smooth=t=>t*t*(3-2*t);
 const pad=n=>String(n).padStart(2,'0');
@@ -2524,7 +2524,8 @@ function tnNew(cid,tee){const seed=(Date.now()^Math.floor(Math.random()*1e9))>>>
   return{v:1,cid,tee,seed,diff:d,skill:sk,mu,day:0,field,me:[],done:false}}
 function tnLoad(){const t=store('ts.tour');return t&&t.v===1&&CID[t.cid]?t:null}
 function tnSave(t){store('ts.tour',t)}
-function tnSimDay(t,day){const R=tnRng((t.seed+day*7919)>>>0);const par=cpar(CID[t.cid],t.tee).reduce((a,b)=>a+b,0);for(const f of t.field){if(f.sc.length>day)continue;const tp=Math.round(t.mu+f.o+tnGauss(R)*2.6);f.sc.push(par+Math.max(-12,Math.min(22,tp)))}}
+function tnDayTP(t,day){/* v3.2: per-golfer round to par for a day (deterministic), with the golfer's style */const R=tnRng((t.seed+day*7919)>>>0);return t.field.map(f=>{const st=TN_STYLES[tnStyleI(f.n)];return Math.max(-12,Math.min(22,Math.round(t.mu+f.o+st.m+tnGauss(R)*2.6*st.sd)))})}
+function tnSimDay(t,day){const par=cpar(CID[t.cid],t.tee).reduce((a,b)=>a+b,0);const TP=tnDayTP(t,day);t.field.forEach((f,i)=>{if(f.sc.length>day)return;f.sc.push(par+TP[i])})}
 function tnTable(t){const par=cpar(CID[t.cid],t.tee).reduce((a,b)=>a+b,0);const days=t.me.length;const rows=t.field.map(f=>({n:f.n,sc:f.sc.slice(0,days),me:false}));rows.push({n:ownerName()||'You',sc:t.me.slice(0,days),me:true});
   for(const r of rows){r.tot=r.sc.reduce((a,b)=>a+b,0);r.tp=r.tot-par*days;r.today=r.sc.length?r.sc[r.sc.length-1]-par:0}
   rows.sort((a,b)=>a.tp-b.tp||(a.me?-1:b.me?1:0)||a.n.localeCompare(b.n));let pos=0;for(let i=0;i<rows.length;i++){if(i===0||rows[i].tp!==rows[i-1].tp)pos=i+1;rows[i].pos=pos}
@@ -2539,7 +2540,7 @@ function showTourSetup(){let sel=null,tee=0;const draw=()=>{const list=COURSES.m
    s.querySelector('.list').onclick=e=>{const b=e.target.closest('.cc');if(b){sel=b.dataset.id;tee=0;draw()}};$('tnB').onclick=showMenu;
    if(c){s.querySelector('#tnT').onclick=e=>{const b=e.target.closest('button');if(b){tee=+b.dataset.i;draw()}};$('tnGo').onclick=()=>{const t=tnNew(sel,tee);tnSave(t);tnStart()}}};draw()}
 function showStandings(t,final){const T=tnTable(t);const me=T.rows.find(r=>r.me);const c=CID[t.cid];const day=T.days;
-  const rowH=r=>`<tr style="${r.me?'background:rgba(63,224,176,.18);font-weight:800':''}"><td>${r.tie?'T':''}${r.pos}</td><td style="text-align:left">${esc(r.n)}${r.me?' (you)':''}</td><td>${tnFmt(r.today)}</td>${r.sc.map(x=>`<td>${x}</td>`).join('')}<td><b>${tnFmt(r.tp)}</b></td></tr>`;
+  const rowH=r=>`<tr style="${r.me?'background:rgba(63,224,176,.18);font-weight:800':''}"><td>${r.tie?'T':''}${r.pos}</td><td style="text-align:left">${esc(r.n)}${r.me?' (you)':`<small style="opacity:.6;margin-left:6px">${TN_STYLES[tnStyleI(r.n)].n}</small>`}</td><td>${tnFmt(r.today)}</td>${r.sc.map(x=>`<td>${x}</td>`).join('')}<td><b>${tnFmt(r.tp)}</b></td></tr>`;
   const top=T.rows.slice(0,10);const show2=top.includes(me)?top:top.concat([me]);
   let champ=false,playoff='';if(final){const lead=T.rows.filter(r=>r.pos===1);if(lead.length===1&&lead[0].me)champ=true;else if(me.pos===1){/* tied for the lead: sudden-death playoff, simulated */const R=tnRng(t.seed^0xabc);const pw=Math.max(.15,Math.min(.85,.5+(t.mu-(me.tp/4))*.04));champ=R()<pw;playoff=champ?'You won the sudden-death playoff!':'You lost in a sudden-death playoff.'}}
   const head=final?(champ?`<div style="text-align:center;margin:8px 0 14px"><div style="font-size:64px;line-height:1">🏆</div><div style="font:900 34px/1.1 system-ui,sans-serif;color:#ffd24a;letter-spacing:.04em">CHAMPION!</div><div style="margin-top:6px">You won at ${esc(c.name)} at <b>${tnFmt(me.tp)}</b> (${me.tot}).${playoff?' '+playoff:''}</div></div>`:`<div style="text-align:center;margin:8px 0 14px"><div style="font:900 26px/1.1 system-ui,sans-serif">Final standings</div><div style="margin-top:6px">You finished <b>${me.tie?'T':''}${me.pos}</b> of ${T.rows.length} at ${tnFmt(me.tp)}.${playoff?' '+playoff:''} Winner: ${esc(T.rows[0].me?T.rows[1].n:T.rows[0].n)} (${tnFmt(T.rows[0].tp)}).</div></div>`)
@@ -2547,7 +2548,7 @@ function showStandings(t,final){const T=tnTable(t);const me=T.rows.find(r=>r.me)
   const s=show('scSetup',`<div class="pn" id="tnS"><div class="hdr"><h2>${esc(c.name)} · Tournament</h2></div>${head}
    <table style="width:100%;border-collapse:collapse;font-size:14px;text-align:center" class="tnT"><tr style="opacity:.7"><th>Pos</th><th style="text-align:left">Player</th><th>Today</th>${T.rows[0].sc.map((_,i)=>`<th>R${i+1}</th>`).join('')}<th>Total</th></tr>${show2.map(rowH).join('')}</table>
    ${final?`<button class="btn c" id="tnM" style="margin-top:14px">Main menu</button>`:`<button class="btn" id="tnN" style="margin-top:14px">Start round ${day+1}</button><button class="btn alt c" id="tnM" style="margin-top:8px">Main menu (resume later)</button>`}</div>`);
-  if(final&&champ)setTimeout(()=>custBoom(null,true),300);
+  if(final&&champ){setTimeout(()=>custBoom(null,true),300);try{tnTrophy(t,me,c)}catch(e){}}
   $('tnM').onclick=()=>{if(final)store('ts.tour',null);showMenu()};if(!final)$('tnN').onclick=tnStart}
 {const _fr=finishRound;finishRound=function(){const r=G.round;const isT=r&&r.tour&&r.n===18;let tot=null;if(isT)tot=r.sc.reduce((a,b)=>a+b,0);const out=_fr.apply(this,arguments);
   if(isT){const t=tnLoad();if(t&&t.me.length===r.tday){t.me.push(tot);tnSimDay(t,t.me.length-1);if(t.me.length>=4)t.done=true;tnSave(t);showStandings(t,t.done)}}return out}}
@@ -2767,6 +2768,33 @@ function showCartColors(T){const st=ccStore();let col=CC_COLS[st.col]?st.col:'re
   s.querySelector('#ccDf').onclick=e=>{const b=e.target.closest('button');if(b){store('ts.diff',+b.dataset.d);draw()}};
   $('ccB').onclick=showCartTracks;s.querySelector('#ccCol').onclick=e=>{const b=e.target.closest('button');if(b){col=b.dataset.c;draw()}};$('ccGo').onclick=()=>{const o=ccStore();o.col=col;ccSave(o);ccStart(T,col)}};draw()}
 {const _sm2=showMenu;showMenu=function(){const out=_sm2.apply(this,arguments);try{const m=document.querySelector('#scMenu .menu');if(m&&!$('mCart')){const b=document.createElement('button');b.className='btn alt';b.id='mCart';b.innerHTML='Cart Part Only<small>Cart Chase · race CPU carts on made-up tracks</small>';b.onclick=showCartTracks;const after=$('mCust')||$('mPlay');after.after(b)}}catch(e){console.warn(e)}return out}}
+
+/* ================= v3.2: Tournament extras: golfer styles, live leaderboard, trophy shelf ================= */
+const TN_STYLES=[{n:'Long hitter',m:-.3,sd:1.25},{n:'Steady putter',m:0,sd:.7},{n:'Risk taker',m:-.2,sd:1.45},{n:'Grinder',m:.2,sd:.8},{n:'Wedge wizard',m:-.1,sd:1}];
+function tnStyleI(n){let h=2166136261;for(const ch of String(n))h=Math.imul(h^ch.charCodeAt(0),16777619);return (h>>>0)%TN_STYLES.length}
+// ---- live leaderboard (during tournament rounds) ----
+function tnLiveRows(){const r=G.round;if(!r||!r.tour)return null;const t=tnLoad();if(!t)return null;const day=r.tday;const par=cpar(CID[t.cid],t.tee);
+  const thru=r.sc.filter(x=>x>0).length;const TP=tnDayTP(t,day);const P=par.reduce((a,b)=>a+b,0);
+  const rows=t.field.map((f,i)=>{const prev=f.sc.slice(0,day).reduce((a,b)=>a+b,0)-P*Math.min(day,f.sc.length);const R=tnRng((t.seed^(i*2654435761))+day);let part=Math.round(TP[i]*thru/18);if(thru>0&&thru<18)part+=Math.round((R()-.5)*2.2);return{n:f.n,tp:prev+part,me:false}});
+  const mePrev=t.me.slice(0,day).reduce((a,b)=>a+b,0)-P*day;let meT=0;for(let i=0;i<18;i++)if(r.sc[i])meT+=r.sc[i]-par[i];rows.push({n:ownerName()||'You',tp:mePrev+meT,me:true});
+  rows.sort((a,b)=>a.tp-b.tp||(a.me?-1:b.me?1:0));let pos=0;rows.forEach((x,i)=>{if(i===0||x.tp!==rows[i-1].tp)pos=i+1;x.pos=pos});return{rows,thru,day}}
+function tnLiveUpd(){let el=$('tnLive');const on=G.mode==='round'&&G.round&&G.round.tour&&!G.cartOn&&$('hud')&&$('hud').classList.contains('on');
+  if(!on){if(el)el.style.display='none';return}
+  if(!el){el=document.createElement('div');el.id='tnLive';el.style.cssText='position:fixed;left:10px;top:162px;z-index:12;width:196px;background:rgba(10,16,20,.72);border-radius:12px;color:#e8eef2;font:600 12px/1.35 system-ui,sans-serif;padding:7px 9px;pointer-events:auto';document.body.appendChild(el);
+    el.addEventListener('click',e=>{if(e.target.closest('#tnLvT')){store('ts.tlb',store('ts.tlb')?0:1);el.dataset.k=''}})}
+  el.style.display='block';const L=tnLiveRows();if(!L)return;const col=!!store('ts.tlb');const me=L.rows.find(x=>x.me);
+  const key=col+'|'+L.thru+'|'+L.rows.map(x=>x.n+x.tp).join();if(el.dataset.k===key)return;el.dataset.k=key;
+  const top=L.rows.slice(0,5);const list=top.includes(me)?top:top.concat([me]);const tie=p=>L.rows.filter(x=>x.pos===p).length>1?'T':'';
+  el.innerHTML=`<div id="tnLvT" style="display:flex;justify-content:space-between;cursor:pointer;font-weight:800;letter-spacing:.06em;font-size:11px;opacity:.9"><span>LEADERBOARD · R${L.day+1}</span><span>${col?'▸':'▾'}</span></div>`+
+   (col?`<div style="margin-top:3px">You: <b>${tie(me.pos)}${me.pos}</b> · ${tnFmt(me.tp)}</div>`:`<table style="width:100%;border-collapse:collapse;margin-top:3px">${list.map(x=>`<tr style="${x.me?'color:#3fe0b0;font-weight:800':''}"><td style="width:26px">${tie(x.pos)}${x.pos}</td><td style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px">${esc(x.me?x.n+' (you)':x.n)}</td><td style="text-align:right">${tnFmt(x.tp)}</td></tr>`).join('')}</table><div style="opacity:.6;font-size:10px;margin-top:2px">thru ${L.thru} · field of ${L.rows.length}</div>`)}
+setInterval(()=>{try{tnLiveUpd()}catch(e){}},700);
+// ---- trophy shelf ----
+function trLoad(){const v=store('ts.trophies');return Array.isArray(v)?v.filter(x=>x&&typeof x==='object'):[]}
+function tnTrophy(t,me,c){const L=trLoad();if(L.some(x=>x.id===t.seed))return;L.push({id:t.seed,cid:t.cid,course:c.name,tp:me.tp,tot:me.tot,diff:DIFF[t.diff]?DIFF[t.diff][0]:'',date:new Date().toISOString().slice(0,10)});store('ts.trophies',L)}
+function showTrophies(back){const L=trLoad().slice().reverse();const s=show('scSetup',`<div class="pn"><div class="hdr"><button class="ib" id="trB">‹</button><h2>Trophy shelf</h2></div>
+  ${L.length?`<div class="gnote">${L.length} tournament win${L.length>1?'s':''}.</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:10px">${L.map(x=>`<div style="background:linear-gradient(180deg,#2a2412,#15130b);border:1px solid #5a4a1a;border-radius:12px;padding:10px;text-align:center"><div style="font-size:40px;line-height:1.1">🏆</div><div style="font-weight:800;margin-top:4px">${esc(x.course)}</div><div style="color:#ffd24a;font-weight:800">${tnFmt(x.tp)} (${x.tot})</div><div style="opacity:.7;font-size:12px">${esc(x.diff)} · ${esc(x.date)}</div></div>`).join('')}</div>`
+  :`<div class="gnote">No trophies yet. Win a tournament to put one on the shelf.</div><div style="text-align:center;font-size:64px;opacity:.25;margin:20px 0">🏆</div>`}</div>`);$('trB').onclick=back||showMenu}
+{const _ts=showTourSetup;showTourSetup=function(){const out=_ts.apply(this,arguments);try{const h=document.querySelector('#scSetup .hdr');if(h&&!$('trShelf')){const b=document.createElement('button');b.className='btn alt';b.id='trShelf';b.style.marginTop='8px';b.innerHTML=`Trophy shelf<small>${trLoad().length} win${trLoad().length===1?'':'s'}</small>`;b.onclick=()=>showTrophies(showTourSetup);(document.querySelector('#scSetup .gnote')||h).after(b)}}catch(e){console.warn(e)}return out}}
 
 </script>
 <script>(function(){function boot(){var s=document.createElement('script');s.text=document.getElementById('gsrc').textContent;document.body.appendChild(s)}
