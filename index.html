@@ -197,7 +197,7 @@ td.l,th.l{text-align:left}
 <div id="ldr" style="position:fixed;inset:0;z-index:9999;background:#0b1014;display:flex;align-items:center;justify-content:center;color:#e8eef2;font:700 28px/1 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;letter-spacing:.18em;transition:opacity .6s ease">LOADING…</div><div id="fps"></div><div id="gimme"><div class="gb"><b>GIMME</b><span id="gimmeS"></span></div></div>
 <script type="text/x-tour" id="gsrc">
 'use strict';
-const VERSION='v3.7';
+const VERSION='v3.8';
 const TAU=Math.PI*2,DEG=Math.PI/180;
 const clamp=(v,a,b)=>v<a?a:v>b?b:v,lerp=(a,b,t)=>a+(b-a)*t,smooth=t=>t*t*(3-2*t);
 const pad=n=>String(n).padStart(2,'0');
@@ -2825,7 +2825,7 @@ function crMakeField(C,E){const seed=(Date.now()^Math.floor(Math.random()*1e9))>
 {const _b=custBallRGB;custBallRGB=function(){const r=G.round;if(r&&r.car){const C=crLoad();if(C&&BALL_COLS[C.ball])return BALL_COLS[C.ball]}return _b()}}
 {const _l=tnLoad;tnLoad=function(){const r=G.round;if(r&&r.car){const C=crLoad();return C&&C.cur}return _l()}}
 function crStart(){const C=crLoad();if(!C)return;if(!C.cur){C.cur=crMakeField(C,crEvent(C));crSave(C)}const t=C.cur;startRound(t.cid,t.tee,0,18,[{name:C.name,owner:1}],0,typeof todKey==='function'?todKey():undefined);if(G.round){G.round.car=1;G.round.tour=1;G.round.tday=0;store('ts.round',{r:G.round,hs:null})}}
-{const _fr=finishRound;finishRound=function(){const r=G.round;if(!(r&&r.car&&r.n===18))return _fr.apply(this,arguments);const tot=r.sc.reduce((a,b)=>a+b,0);try{const CP=cpar(CID[r.cid],r.tee);let fw=0,fwN=0,gir=0,pt=0,bd=0;for(let i=0;i<18;i++){if(CP[i]>3){fwN++;if(r.fir[i])fw++}if(r.gir[i])gir++;pt+=r.pt[i]||0;if(r.sc[i]&&r.sc[i]<CP[i])bd++}G.crRd={tp:tot-CP.reduce((a,b)=>a+b,0),fw,fwN,gir,pt,bd}}catch(e){G.crRd=null}delete r.tour;const out=_fr.apply(this,arguments);try{crFinish(tot)}catch(e){console.warn('career',e)}return out}}
+{const _fr=finishRound;finishRound=function(){const r=G.round;if(!(r&&r.car&&r.n===18))return _fr.apply(this,arguments);const tot=r.sc.reduce((a,b)=>a+b,0);try{const CP=cpar(CID[r.cid],r.tee);let fw=0,fwN=0,gir=0,pt=0,bd=0;for(let i=0;i<18;i++){if(CP[i]>3){fwN++;if(r.fir[i])fw++}if(r.gir[i])gir++;pt+=r.pt[i]||0;if(r.sc[i]&&r.sc[i]<CP[i])bd++}let eg=0,pa=0,bo=0;for(let i=0;i<18;i++){const d=r.sc[i]-CP[i];if(d<=-2)eg++;else if(d===0)pa++;else if(d>0)bo++}G.crRd={tp:tot-CP.reduce((a,b)=>a+b,0),fw,fwN,gir,pt,bd,eg,pa,bo,tot,cid:r.cid,dr:Math.max(0,...(r.dr||[]).filter(Number.isFinite))}}catch(e){G.crRd=null}delete r.tour;const out=_fr.apply(this,arguments);try{crFinish(tot)}catch(e){console.warn('career',e)}return out}}
 function crTable(t,tot){const par=cpar(CID[t.cid],t.tee).reduce((a,b)=>a+b,0);const TP=tnDayTP(t,0);const C=crLoad();
   const rows=t.field.map((f,i)=>({n:f.n,tp:TP[i],rv:f.rv,rg:f.rg}));rows.push({n:C.name,tp:tot-par,me:true});rows.sort((a,b)=>a.tp-b.tp||(a.me?-1:b.me?1:0)||a.n.localeCompare(b.n));
   let pos=0;rows.forEach((x,i)=>{if(i===0||x.tp!==rows[i-1].tp)pos=i+1;x.pos=pos});return{rows,par}}
@@ -2960,6 +2960,22 @@ function showSponsors(){const C=crLoad();if(!C){showCareer();return}const cur=cr
   $('spB').onclick=showCareer;s.querySelector('#spScr').addEventListener('click',e=>{const b=e.target.closest('[data-sp]');if(!b)return;const C2=crLoad();if(crSpon(C2)||C2.ev!==0)return;C2.spon={id:b.dataset.sp,s:C2.season};crSave(C2);showSponsors()})}
 {const _sc=showCareer;showCareer=function(){const out=_sc.apply(this,arguments);try{const p=$('crPlay');const C=crLoad();if(p&&C&&!$('crSpon')){const s=crSpon(C);const d=document.createElement('button');d.id='crSpon';d.className='btn alt';d.style.marginTop='8px';
    d.innerHTML=s?`Sponsor: ${esc(s.n)}<small>${esc(s.goal)} → ${crMoney(crSponBonus(C,s))} per event · season ${C.season}</small>`:C.ev===0?`Sign a sponsor<small>Pick a season deal before your first event</small>`:`No sponsor this season<small>Sign one at the start of next season</small>`;d.onclick=showSponsors;p.before(d)}}catch(e){console.warn(e)}return out}}
+
+/* ================= v3.8: Career stats (accumulated from real career rounds; ts.career.st) ================= */
+function crSt(C){const z={n:0,fw:0,fwN:0,gir:0,girN:0,pt:0,bd:0,eg:0,pa:0,bo:0,tp:0,ld:0,best:null,top10:0};C.st=Object.assign(z,C.st&&typeof C.st==='object'?C.st:{});return C.st}
+{const _f=crFinish;crFinish=function(tot){try{const C=crLoad();const d=G.crRd;if(C&&C.cur&&d){const S=crSt(C);S.n++;S.fw+=d.fw;S.fwN+=d.fwN;S.gir+=d.gir;S.girN+=18;S.pt+=d.pt;S.bd+=d.bd-d.eg;S.eg+=d.eg;S.pa+=d.pa;S.bo+=d.bo;S.tp+=d.tp;if(d.dr>S.ld)S.ld=Math.round(d.dr);
+   if(!S.best||d.tp<S.best.tp)S.best={tp:d.tp,tot:d.tot,cid:d.cid,ev:C.cur.ev?C.cur.ev.name:'',s:C.season};crSave(C)}}catch(e){console.warn(e)}const out=_f.apply(this,arguments);try{const C=crLoad();const L=C.res[C.res.length-1];if(L&&L.pos<=10&&!L.t10){L.t10=1;crSt(C).top10++;crSave(C)}}catch(e){}return out}}
+function showCrStats(){const C=crLoad();if(!C){showCareer();return}const S=crSt(C);const n=S.n;const pc=(a,b)=>b?Math.round(a/b*100)+'%':'—';const av=(a)=>n?(a/n).toFixed(1):'—';
+  const st=(k,v,sub)=>`<div style="background:#121a20;border-radius:12px;padding:12px;text-align:center"><div style="font-size:11px;opacity:.65;letter-spacing:.08em">${k}</div><div style="font-weight:800;font-size:24px;margin-top:2px">${v}</div>${sub?`<div style="font-size:12px;opacity:.6">${sub}</div>`:''}</div>`;
+  const wins=C.res.filter(x=>x.pos===1).length;
+  show('scSetup',`<div class="pn" id="crStS" style="max-width:820px"><div class="hdr"><button class="ib" id="csB">‹</button><h2>Career stats · ${esc(C.name)}</h2></div>
+  <div class="gnote">Across ${n} career round${n===1?'':'s'} (all seasons and levels).</div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px">
+   ${st('FAIRWAYS HIT',pc(S.fw,S.fwN),S.fwN?S.fw+' of '+S.fwN:'')}${st('GREENS IN REG',pc(S.gir,S.girN),S.girN?S.gir+' of '+S.girN:'')}${st('PUTTS / ROUND',av(S.pt))}${st('SCORING AVG',n?tnFmt(+(S.tp/n).toFixed(1)):'—','to par')}
+   ${st('LONGEST DRIVE',S.ld?S.ld+' yds':'—')}${st('BEST ROUND',S.best?tnFmt(S.best.tp)+' ('+S.best.tot+')':'—',S.best?esc((CID[S.best.cid]||{}).name||''):'')}${st('ROUNDS',n)}${st('WINS · TOP 10',wins+' · '+S.top10)}
+   ${st('EAGLES+',S.eg)}${st('BIRDIES',S.bd)}${st('PARS',S.pa)}${st('BOGEYS+',S.bo)}</div>
+  <button class="btn c" id="csB2" style="margin-top:14px">Career</button></div>`);$('csB').onclick=$('csB2').onclick=showCareer}
+{const _sc=showCareer;showCareer=function(){const out=_sc.apply(this,arguments);try{const t=$('crTro');if(t&&!$('crStats')){const b=document.createElement('button');b.className='btn alt';b.id='crStats';b.style.marginTop='8px';const C=crLoad();const n=crSt(C).n;b.innerHTML=`Stats<small>${n} career round${n===1?'':'s'} · fairways, greens, putts, longest drive, best round</small>`;b.onclick=showCrStats;t.before(b)}}catch(e){console.warn(e)}return out}}
 
 </script>
 <script>(function(){function boot(){var s=document.createElement('script');s.text=document.getElementById('gsrc').textContent;document.body.appendChild(s)}

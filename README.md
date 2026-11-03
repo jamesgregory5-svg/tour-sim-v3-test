@@ -50,3 +50,7 @@ A live leaderboard while you play, named CPU golfers with their own styles, and 
 - Bonus paid after each event that meets the goal, shown on the result screen; bonuses scale with tier and level
 - Sponsor shown on the career screen and in the in-round gear chip; saved in ts.career (old careers load)
 - Desktop layout: live leaderboard expanded by default on all desktop windows (collapse default only under 640 px wide)
+
+## v3.8: Career stats
+- Stats button on the career screen: fairways hit, greens in regulation, putts per round, scoring average, longest drive, best round, rounds, wins/top 10, eagles, birdies, pars, bogeys
+- Recorded from every finished career round across all seasons and levels; saved in ts.career (old careers start empty)
