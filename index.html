@@ -197,7 +197,7 @@ td.l,th.l{text-align:left}
 <div id="ldr" style="position:fixed;inset:0;z-index:9999;background:#0b1014;display:flex;align-items:center;justify-content:center;color:#e8eef2;font:700 28px/1 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;letter-spacing:.18em;transition:opacity .6s ease">LOADING…</div><div id="fps"></div><div id="gimme"><div class="gb"><b>GIMME</b><span id="gimmeS"></span></div></div>
 <script type="text/x-tour" id="gsrc">
 'use strict';
-const VERSION='v3.10';
+const VERSION='v3.11';
 const TAU=Math.PI*2,DEG=Math.PI/180;
 const clamp=(v,a,b)=>v<a?a:v>b?b:v,lerp=(a,b,t)=>a+(b-a)*t,smooth=t=>t*t*(3-2*t);
 const pad=n=>String(n).padStart(2,'0');
@@ -2933,7 +2933,7 @@ function showHofScreen(h){const C=crLoad();const n=(C.hof||[]).length;
 function crGearChip(){let el=$('crGearI');const r=G.round;const lv=$('tnLive');const on=r&&r.car&&G.mode==='round'&&lv&&lv.style.display!=='none';if(!on){if(el)el.style.display='none';return}
   const C=crLoad();if(!C)return;crGear(C);const z=crStats(C,G.club);const sl=crSlotFor(G.club);const it=crEq(C,sl),bl=crEq(C,'b');
   if(!el){el=document.createElement('div');el.id='crGearI';el.style.cssText='position:fixed;left:10px;z-index:12;width:196px;background:rgba(10,16,20,.72);border-radius:10px;color:#e8eef2;font:600 11px/1.35 system-ui,sans-serif;padding:5px 9px;pointer-events:none;box-sizing:border-box';document.body.appendChild(el)}
-  el.style.top=(lv.offsetTop+lv.offsetHeight+6)+'px';el.style.width=lv.style.width||'196px';el.style.display='block';const txt=`<b>${DIFF[C.lvl][0]}</b> · ${it?esc(it.n.replace(/ (Driver|Irons|Wedges|Putter)$/,'')):'Stock'}${bl?' · '+esc(bl.n.replace(/ Ball$/,'')):''}<br><span style="opacity:.75">ACC +${z.acc} · PWR +${z.pow} · CON +${z.con}</span>${typeof crSpon==='function'&&crSpon(C)?`<br><span style="color:#ffd24a">${esc(crSpon(C).n)}: ${esc(crSpon(C).goal)}</span>`:''}${typeof crTrnLabel==='function'&&crTrnLabel(C)?`<br><span style="color:#7ab8ff">${esc(crTrnLabel(C))}</span>`:''}`;if(el.innerHTML!==txt)el.innerHTML=txt}
+  el.style.top=(lv.offsetTop+lv.offsetHeight+6)+'px';el.style.width=lv.style.width||'196px';el.style.display='block';const txt=`<b>${DIFF[C.lvl][0]}</b> · ${it?esc(it.n.replace(/ (Driver|Irons|Wedges|Putter)$/,'')):'Stock'}${bl?' · '+esc(bl.n.replace(/ Ball$/,'')):''}<br><span style="opacity:.75">ACC +${z.acc} · PWR +${z.pow} · CON +${z.con}</span>${typeof crSpon==='function'&&crSpon(C)?`<br><span style="color:#ffd24a">${esc(crSpon(C).n)}: ${esc(crSpon(C).goal)}</span>`:''}${typeof crFormLabel==='function'&&crFormLabel(C)?`<br><span style="color:${C.form>0?'#ff9a4a':'#8fd0ff'}">${esc(crFormLabel(C))}</span>`:''}${typeof crTrnLabel==='function'&&crTrnLabel(C)?`<br><span style="color:#7ab8ff">${esc(crTrnLabel(C))}</span>`:''}`;if(el.innerHTML!==txt)el.innerHTML=txt}
 setInterval(()=>{try{crGearChip()}catch(e){}},700);
 
 /* ================= v3.6: fix pass: trophy-shelf button on every tournament-setup redraw; no duplicate resume for career rounds ================= */
@@ -3021,6 +3021,15 @@ function crChSkip(){const C=crLoad();const o=crChOffer(C);if(!o)return;o.done=1;
 {const _sc=showCareer;showCareer=function(){const out=_sc.apply(this,arguments);try{const p=$('crPlay');const C=crLoad();const o=crChOffer(C);if(p&&o&&!$('crCh')&&!C.cur){const P=crChPurse(C);const d=document.createElement('div');d.id='crCh';d.style.cssText='background:linear-gradient(180deg,#2a2412,#15130b);border:1px solid #5a4a1a;border-radius:12px;padding:10px;margin-top:10px';
    d.innerHTML=`<div style="font-weight:800;color:#ffd24a">CHALLENGE EVENT · ${o.type==='ld'?'Long Drive Shootout':'Closest to the Pin Shootout'}</div><div style="font-size:13px;opacity:.85;margin-top:2px">One-off shootout before your next event vs the rivals and tour regulars. ${o.type==='ld'?'6 drives, longest in the grid wins.':'5 balls at a par 3, closest wins.'} Purse ${crMoney(P)} (winner ${crMoney(crChPays(P)[0])}). Your gear and level apply.</div>
    <div style="display:flex;gap:8px;margin-top:8px"><button class="btn" id="crChGo" style="margin:0">Play shootout</button><button class="btn alt" id="crChSk" style="margin:0;width:auto">Skip</button></div>`;p.before(d);$('crChGo').onclick=crChStart;$('crChSk').onclick=crChSkip}}catch(e){console.warn(e)}return out}}
+
+/* ================= v3.11: Career form streaks (mild): top-5 finishes heat you up, finishes outside the top 25 cool you down; form fades toward neutral otherwise ================= */
+function crForm(C){const f=+(C&&C.form)||0;return Math.max(-2,Math.min(2,Math.round(f)))}
+function crFormLabel(C){const f=crForm(C);if(!f)return'';return f>0?`🔥 Hot streak${f>1?' x2':''}: ACC +${f} · CON +${f}`:`❄ Cold spell${f<-1?' x2':''}: ACC ${f} · CON ${f}`}
+{const _s=crStats;crStats=function(C,ci){const z=_s.apply(this,arguments);const f=crForm(C);if(f){z.acc+=f;z.con+=f}return z}}
+{const _f=crFinish;crFinish=function(){const before=(()=>{const C=crLoad();return C&&C.cur?C.res.length:-1})();const out=_f.apply(this,arguments);if(before>=0){try{const C=crLoad();const L=C.res[C.res.length-1];if(L&&C.res.length>before){let f=crForm(C);if(L.pos<=5)f=Math.min(2,f+1);else if(L.pos>25)f=Math.max(-2,f-1);else f=f>0?f-1:f<0?f+1:0;C.form=f;L.form=f;crSave(C);
+   const R=$('crRes');if(R){const d=document.createElement('div');d.style.cssText='text-align:center;margin-top:6px;font-weight:700;color:'+(f>0?'#ff9a4a':f<0?'#8fd0ff':'#cfd8de');d.textContent=f>0?'🔥 You are on a hot streak (ACC/CON +'+f+' next event)':f<0?'❄ Cold spell (ACC/CON '+f+' next event). A top-25 finish will warm you up.':'Form: neutral';const t=R.querySelector('table');if(t)t.before(d)}}}catch(e){console.warn(e)}}return out}}
+{const _sc=showCareer;showCareer=function(){const out=_sc.apply(this,arguments);try{const C=crLoad();const g=document.querySelector('#crScr .gnote');if(C&&g&&!$('crFormL')){const f=crForm(C);const d=document.createElement('div');d.id='crFormL';d.style.cssText='margin-top:6px;font-weight:700;font-size:13px;color:'+(f>0?'#ff9a4a':f<0?'#8fd0ff':'#9fb0ba');
+   d.textContent=f?crFormLabel(C)+' (mild, changes after each event)':'Form: neutral · a top-5 finish starts a hot streak, outside the top 25 a cold spell';g.after(d)}}catch(e){console.warn(e)}return out}}
 
 </script>
 <script>(function(){function boot(){var s=document.createElement('script');s.text=document.getElementById('gsrc').textContent;document.body.appendChild(s)}

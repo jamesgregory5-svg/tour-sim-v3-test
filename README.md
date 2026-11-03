@@ -63,3 +63,8 @@ A live leaderboard while you play, named CPU golfers with their own styles, and 
 - Career shootouts between events: Long Drive Shootout after event 2 and Closest to the Pin Shootout after event 5 of each season (play or skip)
 - vs the 4 rivals and 3 tour regulars; purse 60% of the tier purse (winner 50%, bigger than a regular-event win); CPU strength scales with level and tier
 - Uses the existing long drive / CTP modes with career level, gear and trail; CTP hole is a par 3 from your unlocked courses; regular LD/CTP records untouched; saved in ts.career
+
+## v3.11: Form streaks
+- Career form: a top-5 finish heats you up (hot +1, max +2), outside the top 25 cools you down (cold -1, min -2), otherwise form fades one step toward neutral
+- Form adds or subtracts accuracy and consistency points only (mild: about 3% miss / 5% strike variance per point); no power effect
+- Shown on the career screen, the event result and the in-round gear chip; saved in ts.career (old careers start neutral)
