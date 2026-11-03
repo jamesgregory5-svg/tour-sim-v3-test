@@ -22,3 +22,9 @@ A live leaderboard while you play, named CPU golfers with their own styles, and 
 - Prize money + ranking points; 1000 points promotes: Regional > Challenger > Pro > Major Series (tougher fields, longer tees)
 - Courses unlock by tier (famous ones in Major Series); career screen with rank, earnings, wins, trophies, season history
 - Career starts at Reggie difficulty (Hall of Fame level-ups come in v3.5, pro shop in v3.4)
+
+## v3.4: Pro shop
+- Career pro shop: drivers, irons, wedges, putters, balls (parody brands, several tiers) and ball trails; prize money only; cart colors stay free
+- Accuracy (less miss off aim line), power (carry), consistency (less strike variance) apply to real career shots; small upgrades; stock set = current clubs
+- Gear saved in ts.career (old career saves load)
+- Career live leaderboard shows the event name; Regional/Reggie field re-tuned so rivals contend (winning score around -2)
