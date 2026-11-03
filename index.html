@@ -197,7 +197,7 @@ td.l,th.l{text-align:left}
 <div id="ldr" style="position:fixed;inset:0;z-index:9999;background:#0b1014;display:flex;align-items:center;justify-content:center;color:#e8eef2;font:700 28px/1 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;letter-spacing:.18em;transition:opacity .6s ease">LOADING…</div><div id="fps"></div><div id="gimme"><div class="gb"><b>GIMME</b><span id="gimmeS"></span></div></div>
 <script type="text/x-tour" id="gsrc">
 'use strict';
-const VERSION='v3.2';
+const VERSION='v3.3';
 const TAU=Math.PI*2,DEG=Math.PI/180;
 const clamp=(v,a,b)=>v<a?a:v>b?b:v,lerp=(a,b,t)=>a+(b-a)*t,smooth=t=>t*t*(3-2*t);
 const pad=n=>String(n).padStart(2,'0');
@@ -2795,6 +2795,80 @@ function showTrophies(back){const L=trLoad().slice().reverse();const s=show('scS
   ${L.length?`<div class="gnote">${L.length} tournament win${L.length>1?'s':''}.</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:10px">${L.map(x=>`<div style="background:linear-gradient(180deg,#2a2412,#15130b);border:1px solid #5a4a1a;border-radius:12px;padding:10px;text-align:center"><div style="font-size:40px;line-height:1.1">🏆</div><div style="font-weight:800;margin-top:4px">${esc(x.course)}</div><div style="color:#ffd24a;font-weight:800">${tnFmt(x.tp)} (${x.tot})</div><div style="opacity:.7;font-size:12px">${esc(x.diff)} · ${esc(x.date)}</div></div>`).join('')}</div>`
   :`<div class="gnote">No trophies yet. Win a tournament to put one on the shelf.</div><div style="text-align:center;font-size:64px;opacity:.25;margin:20px 0">🏆</div>`}</div>`);$('trB').onclick=back||showMenu}
 {const _ts=showTourSetup;showTourSetup=function(){const out=_ts.apply(this,arguments);try{const h=document.querySelector('#scSetup .hdr');if(h&&!$('trShelf')){const b=document.createElement('button');b.className='btn alt';b.id='trShelf';b.style.marginTop='8px';b.innerHTML=`Trophy shelf<small>${trLoad().length} win${trLoad().length===1?'':'s'}</small>`;b.onclick=()=>showTrophies(showTourSetup);(document.querySelector('#scSetup .gnote')||h).after(b)}}catch(e){console.warn(e)}return out}}
+
+/* ================= v3.3: Career mode (core) ================= */
+const CR_TIERS=[{n:'Regional',purse:25000,tee:-1,mu:2},{n:'Challenger',purse:80000,tee:1,mu:0},{n:'Pro',purse:300000,tee:0,mu:-1.5},{n:'Major Series',purse:1000000,tee:0,mu:-3}];
+const CR_COURSES=[['lookaway','fiveponds','prairie','shadowcreek','peachtree','crystal','chicago'],['bethpage','pacificdunes','oakhill','oaklandhills','muirfieldv','friars','fishers','seminole'],['sawgrass','riviera','tcc','lacc','wingedfoot','sandhills','ngla','merion'],['augusta','standrews','pebble','pinevalley','oakmont','shinnecock','cypress']];
+const CR_BASE=[10,6,2.5,-.5,-3.5,-6.5];/* CPU field mean (to par) per career level Reggie..Woods */
+const CR_RIVALS=['Bruno Vance','Dex Harlan','Miles Okoro','Tobias Wren'];
+const CR_REGULARS=['Hank Ostrow','Jules Marchetti','Ravi Desai','Colt Brannigan','Soren Ekdahl','Mateo Rios','Gus Pelletier','Ty Abernathy','Ollie Fenwick','Kenji Sato'];
+const CR_EVN=['Open','Classic','Invitational','Championship'];const CR_SEASON=8,CR_PROMO=1000;
+function crLoad(){const v=store('ts.career');return v&&v.v===1&&typeof v.name==='string'?v:null}
+function crSave(C){store('ts.career',C)}
+function crNew(name,ball){return{v:1,name:String(name||'Player').slice(0,16),ball:BALL_COLS[ball]?ball:'white',lvl:0,season:1,tier:0,maxT:0,tpts:0,spts:0,ev:0,cash:0,earn:0,wins:0,rp:{},hist:[],res:[],cur:null,made:new Date().toISOString().slice(0,10)}}
+function crCourseOK(C,cid){return CR_COURSES.some((L,i)=>i<=C.maxT&&L.includes(cid))}
+function crEvent(C){const L=CR_COURSES[C.tier];const R=tnRng((C.season*131+C.ev*977+C.tier*31+7)>>>0);const cid=L[Math.floor(R()*L.length)];const c=CID[cid];const T=CR_TIERS[C.tier];
+  const tee=T.tee<0?c.tees.length-1:Math.min(T.tee,c.tees.length-1);const major=C.tier===3;
+  return{cid,tee,name:(major?'Major: ':T.n+' ')+c.name.replace(/ \(.*\)$/,'').replace(/ (Golf|Country) Club$/,'')+' '+CR_EVN[(C.ev+C.season)%4],purse:Math.round(T.purse*(1+.25*C.lvl)),major}}
+function crPts(pos){return pos<=25?Math.round(500*Math.pow(.72,pos-1)):0}
+function crPay(pos,purse){return pos<=30?Math.round(purse*.18*Math.pow(.8,pos-1)/10)*10:0}
+function crMakeField(C,E){const seed=(Date.now()^Math.floor(Math.random()*1e9))>>>0;const R=tnRng(seed);const used=new Set([...CR_RIVALS,...CR_REGULARS,C.name]);const field=[];
+  for(const n of CR_RIVALS)field.push({n,o:-1.3+tnGauss(R)*.3,sc:[],rv:1});for(const n of CR_REGULARS)field.push({n,o:-.4+tnGauss(R)*.5,sc:[],rg:1});
+  while(field.length<TN_FIELD){const n=TN_FIRST[Math.floor(R()*TN_FIRST.length)]+' '+TN_LAST[Math.floor(R()*TN_LAST.length)];if(used.has(n))continue;used.add(n);field.push({n,o:+(tnGauss(R)*1.6).toFixed(2),sc:[]})}
+  const mu=(CR_BASE[C.lvl]||0)+CR_TIERS[C.tier].mu;return{v:1,car:1,cid:E.cid,tee:E.tee,seed,diff:C.lvl,skill:null,mu,day:0,field,me:[],done:false,ev:E}}
+/* during career rounds: career level drives the swing meter, career golfer name/ball, and the live leaderboard reads the career event */
+{const _d=diffI;diffI=function(){const r=G.round;if(r&&r.car){const C=crLoad();if(C)return C.lvl}return _d()}}
+{const _o=ownerName;ownerName=function(){const r=G.round;if(r&&r.car){const C=crLoad();if(C)return C.name}return _o()}}
+{const _b=custBallRGB;custBallRGB=function(){const r=G.round;if(r&&r.car){const C=crLoad();if(C&&BALL_COLS[C.ball])return BALL_COLS[C.ball]}return _b()}}
+{const _l=tnLoad;tnLoad=function(){const r=G.round;if(r&&r.car){const C=crLoad();return C&&C.cur}return _l()}}
+function crStart(){const C=crLoad();if(!C)return;if(!C.cur){C.cur=crMakeField(C,crEvent(C));crSave(C)}const t=C.cur;startRound(t.cid,t.tee,0,18,[{name:C.name,owner:1}],0,typeof todKey==='function'?todKey():undefined);if(G.round){G.round.car=1;G.round.tour=1;G.round.tday=0;store('ts.round',{r:G.round,hs:null})}}
+{const _fr=finishRound;finishRound=function(){const r=G.round;if(!(r&&r.car&&r.n===18))return _fr.apply(this,arguments);const tot=r.sc.reduce((a,b)=>a+b,0);delete r.tour;const out=_fr.apply(this,arguments);try{crFinish(tot)}catch(e){console.warn('career',e)}return out}}
+function crTable(t,tot){const par=cpar(CID[t.cid],t.tee).reduce((a,b)=>a+b,0);const TP=tnDayTP(t,0);const C=crLoad();
+  const rows=t.field.map((f,i)=>({n:f.n,tp:TP[i],rv:f.rv,rg:f.rg}));rows.push({n:C.name,tp:tot-par,me:true});rows.sort((a,b)=>a.tp-b.tp||(a.me?-1:b.me?1:0)||a.n.localeCompare(b.n));
+  let pos=0;rows.forEach((x,i)=>{if(i===0||x.tp!==rows[i-1].tp)pos=i+1;x.pos=pos});return{rows,par}}
+function crFinish(tot){const C=crLoad();if(!C||!C.cur)return;const t=C.cur,E=t.ev;const T=crTable(t,tot);const me=T.rows.find(x=>x.me);const ties=T.rows.filter(x=>x.pos===me.pos).length;
+  let pos=me.pos;let note='';if(pos===1&&ties>1){const R=tnRng(t.seed^0x5ee);if(R()<.5)note='You won a sudden-death playoff!';else{pos=2;note='You lost a sudden-death playoff.'}}
+  const pts=crPts(pos),pay=crPay(pos,E.purse);C.cash+=pay;C.earn+=pay;C.tpts+=pts;C.spts+=pts;const win=pos===1;if(win)C.wins++;
+  for(const x of T.rows)if(x.rv||x.rg)C.rp[x.n]=(C.rp[x.n]||0)+crPts(x.pos);
+  if(win){try{const L=trLoad();if(!L.some(z=>z.id===t.seed)){L.push({id:t.seed,cid:t.cid,course:CID[t.cid].name,tp:me.tp,tot,diff:DIFF[C.lvl][0],date:new Date().toISOString().slice(0,10),car:1,ev:E.name});store('ts.trophies',L)}}catch(e){}}
+  const res={s:C.season,ev:C.ev+1,name:E.name,cid:t.cid,tier:C.tier,pos,tie:ties>1&&!note,tp:me.tp,tot,pts,pay};C.res.push(res);if(C.res.length>200)C.res.shift();
+  let promo='';if(C.tier<3&&C.tpts>=CR_PROMO){C.tier++;C.tpts=0;C.maxT=Math.max(C.maxT,C.tier);promo=`Promoted to the ${CR_TIERS[C.tier].n} tier! New courses unlocked: ${CR_COURSES[C.tier].map(id=>CID[id].name.replace(/ \(.*\)$/,'')).join(', ')}.`}
+  C.cur=null;C.ev++;let send=null;if(C.ev>=CR_SEASON){send=crSeasonEnd(C)}crSave(C);crResult(T,me,res,note,promo,send)}
+function crRank(C){const L=[{n:C.name,p:C.spts,me:true}].concat([...CR_RIVALS,...CR_REGULARS].map(n=>({n,p:C.rp[n]||0,rv:CR_RIVALS.includes(n)})));L.sort((a,b)=>b.p-a.p||(a.me?-1:b.me?1:0));L.forEach((x,i)=>x.pos=i+1);return L}
+function crSeasonEnd(C){const L=crRank(C);const me=L.find(x=>x.me);const sr=C.res.filter(x=>x.s===C.season);
+  const h={s:C.season,lvl:C.lvl,tier:C.tier,rank:me.pos,pts:C.spts,wins:sr.filter(x=>x.pos===1).length,earn:sr.reduce((a,x)=>a+x.pay,0),best:Math.min(...sr.map(x=>x.pos))};C.hist.push(h);
+  C.season++;C.ev=0;C.spts=0;C.rp={};return h}
+function crMoney(x){return '$'+Math.round(x).toLocaleString()}
+function crOrd(n){const s=['th','st','nd','rd'],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0])}
+function crResult(T,me,res,note,promo,send){const C=crLoad();const top=T.rows.slice(0,10);const list=top.includes(me)?top:top.concat([me]);const tie=p=>T.rows.filter(x=>x.pos===p).length>1?'T':'';
+  const s=show('scSetup',`<div class="pn" id="crRes"><div class="hdr"><h2>${esc(res.name)}</h2></div>
+  <div style="text-align:center;margin:6px 0 12px">${res.pos===1?'<div style="font-size:56px;line-height:1">🏆</div><div style="font:900 30px/1.1 system-ui,sans-serif;color:#ffd24a">CHAMPION!</div>':`<div style="font:900 26px/1.1 system-ui,sans-serif">You finished ${res.tie?'T':''}${crOrd(res.pos)}</div>`}
+  <div style="margin-top:6px">${tnFmt(res.tp)} (${res.tot}) · <b style="color:#3fe0b0">+${crMoney(res.pay)}</b> · <b>+${res.pts} pts</b>${note?' · '+note:''}</div>${promo?`<div style="margin-top:8px;color:#ffd24a;font-weight:800">${esc(promo)}</div>`:''}
+  ${send?`<div style="margin-top:8px;font-weight:800">Season ${send.s} complete: ranked No. ${send.rank} · ${send.wins} win${send.wins===1?'':'s'} · ${crMoney(send.earn)}</div>`:''}</div>
+  <table style="width:100%;border-collapse:collapse;font-size:14px;text-align:center"><tr style="opacity:.7"><th>Pos</th><th style="text-align:left">Player</th><th>Score</th></tr>${list.map(x=>`<tr style="${x.me?'background:rgba(63,224,176,.18);font-weight:800':''}"><td>${tie(x.pos)}${x.pos}</td><td style="text-align:left">${esc(x.n)}${x.me?' (you)':`<small style="opacity:.6;margin-left:6px">${x.rv?'<b style="color:#ff9a6a">RIVAL</b> · ':''}${TN_STYLES[tnStyleI(x.n)].n}</small>`}</td><td><b>${tnFmt(x.tp)}</b></td></tr>`).join('')}</table>
+  <button class="btn c" id="crBk" style="margin-top:14px">Career</button></div>`);if(res.pos===1)setTimeout(()=>custBoom(null,true),300);$('crBk').onclick=showCareer}
+function showCareerNew(){let ball='white';const draw=()=>{const nm=($('crNm')&&$('crNm').value)||ownerName();const s=show('scSetup',`<div class="pn"><div class="hdr"><button class="ib" id="crB">‹</button><h2>New career</h2></div>
+  <div class="gnote">Create your golfer. You start on the Regional tier at the Reggie difficulty level. Finish high in 18-hole events to earn prize money and ranking points. ${CR_PROMO} points moves you up a tier, with tougher fields and harder courses.</div>
+  <div class="sec">Name</div><input id="crNm" maxlength="16" value="${esc(nm)}" style="font:inherit;font-size:16px;padding:10px 12px;border-radius:10px;border:1px solid #3a4a55;background:#121a20;color:#fff;width:100%;box-sizing:border-box">
+  <div class="sec">Ball color</div><div class="seg" id="crBall" style="flex-wrap:wrap">${Object.keys(BALL_COLS).map(k=>`<button style="flex:1 1 22%" data-v="${k}" class="${k===ball?'sel':''}"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:6px;vertical-align:-1px;border:1px solid #888;background:rgb(${BALL_COLS[k].map(x=>Math.round(x*255)).join(',')})"></span>${k[0].toUpperCase()+k.slice(1)}</button>`).join('')}</div>
+  <button class="btn c" id="crGo" style="margin-top:14px">Start career</button></div>`);
+  $('crBall').onclick=e=>{const b=e.target.closest('button');if(b){ball=b.dataset.v;draw()}};$('crB').onclick=showMenu;$('crGo').onclick=()=>{crSave(crNew($('crNm').value.trim()||ownerName(),ball));showCareer()}};draw()}
+function showCareer(){const C=crLoad();if(!C){showCareerNew();return}const E=C.cur?C.cur.ev:crEvent(C);const L=crRank(C);const me=L.find(x=>x.me);const sv=store('ts.round');const inRound=sv&&sv.r&&sv.r.car;
+  const tro=trLoad().filter(x=>x.car).length;const st=(k,v)=>`<div style="background:#121a20;border-radius:10px;padding:8px;text-align:center"><div style="font-size:11px;opacity:.65;letter-spacing:.06em">${k}</div><div style="font-weight:800;font-size:17px">${v}</div></div>`;
+  const s=show('scSetup',`<div class="pn" id="crScr"><div class="hdr"><button class="ib" id="crB">‹</button><h2>Career · ${esc(C.name)}</h2></div>
+  <div class="gnote">Season ${C.season} · event ${C.ev+1} of ${CR_SEASON} · <b>${CR_TIERS[C.tier].n}</b> tier · level <b>${DIFF[C.lvl][0]}</b></div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0">${st('RANK','No. '+me.pos)}${st('EARNINGS',crMoney(C.earn))}${st('WINS',C.wins)}${st('SEASON PTS',C.spts)}${st(C.tier<3?'TO PROMOTION':'TIER PTS',C.tier<3?Math.max(0,CR_PROMO-C.tpts):C.tpts)}${st('TROPHIES',tro)}</div>
+  <div class="sec">Next event</div><div style="background:#121a20;border-radius:12px;padding:10px"><div style="font-weight:800">${esc(E.name)}</div><div style="opacity:.75;font-size:13px">${esc(CID[E.cid].name)} · ${esc(CID[E.cid].tees[E.tee].n)} tees · 18 holes · purse ${crMoney(E.purse)}${E.major?' · MAJOR':''}</div></div>
+  <button class="btn" id="crPlay" style="margin-top:10px">${inRound?'Resume event':'Play event'}</button>
+  <div class="sec">Season rankings</div><table style="width:100%;border-collapse:collapse;font-size:13px">${L.slice(0,6).concat(me.pos>6?[me]:[]).map(x=>`<tr style="${x.me?'color:#3fe0b0;font-weight:800':''}"><td style="width:30px">${x.pos}</td><td>${esc(x.n)}${x.me?' (you)':x.rv?' <small style="color:#ff9a6a">RIVAL</small>':''}</td><td style="text-align:right">${x.p} pts</td></tr>`).join('')}</table>
+  <div class="sec">Courses unlocked (${CR_COURSES.slice(0,C.maxT+1).flat().length} of 30)</div><div style="font-size:13px;line-height:1.5">${CR_COURSES.map((Lc,i)=>`<div style="opacity:${i<=C.maxT?1:.45}"><b>${CR_TIERS[i].n}${i<=C.maxT?'':' 🔒'}:</b> ${Lc.map(id=>esc(CID[id].name.replace(/ \(.*\)$/,''))).join(', ')}</div>`).join('')}</div>
+  <div class="sec">This season</div>${C.res.filter(x=>x.s===C.season).length?`<table style="width:100%;font-size:13px">${C.res.filter(x=>x.s===C.season).map(x=>`<tr><td>${x.ev}</td><td>${esc(x.name)}</td><td>${x.tie?'T':''}${x.pos}</td><td>${tnFmt(x.tp)}</td><td style="text-align:right">${crMoney(x.pay)}</td></tr>`).join('')}</table>`:'<div class="gnote">No events played yet this season.</div>'}
+  <div class="sec">Season history</div>${C.hist.length?`<table style="width:100%;font-size:13px">${C.hist.slice().reverse().map(h=>`<tr><td>S${h.s}</td><td>${DIFF[h.lvl][0]} · ${CR_TIERS[h.tier].n}</td><td>No. ${h.rank}</td><td>${h.wins}W</td><td style="text-align:right">${crMoney(h.earn)}</td></tr>`).join('')}</table>`:'<div class="gnote">Finish a season to see it here.</div>'}
+  <button class="btn alt" id="crTro" style="margin-top:12px">Trophy shelf<small>${tro} career win${tro===1?'':'s'}</small></button>
+  <button class="btn alt c" id="crDel" style="margin-top:8px">Retire (start a new career)</button></div>`);
+  $('crB').onclick=showMenu;$('crPlay').onclick=()=>{if(inRound)resumeRound(store('ts.round'));else crStart()};$('crTro').onclick=()=>showTrophies(showCareer);
+  $('crDel').onclick=()=>{if(confirm('Retire this golfer and start a new career? Trophies stay on the shelf.')){store('ts.career',null);showCareerNew()}}}
+{const _sm=showMenu;showMenu=function(){const out=_sm.apply(this,arguments);try{const p=$('mPlay');if(p&&!$('mCareer')){const C=crLoad();const b=document.createElement('button');b.className='btn alt';b.id='mCareer';b.innerHTML=C?`Career<small>${esc(C.name)} · ${CR_TIERS[C.tier].n} · season ${C.season} · ${crMoney(C.earn)}</small>`:'Career<small>Create a golfer · climb four tiers · unlock courses</small>';b.onclick=showCareer;p.after(b)}}catch(e){console.warn(e)}return out}}
 
 </script>
 <script>(function(){function boot(){var s=document.createElement('script');s.text=document.getElementById('gsrc').textContent;document.body.appendChild(s)}

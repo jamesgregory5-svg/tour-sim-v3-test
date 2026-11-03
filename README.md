@@ -15,3 +15,10 @@ A live leaderboard while you play, named CPU golfers with their own styles, and 
 - Live tournament leaderboard during rounds (top 5 + you, thru N; click header to collapse)
 - Named CPU golfers with styles: Long hitter, Steady putter, Risk taker, Grinder, Wedge wizard
 - Trophy shelf for tournament wins (new save key ts.trophies; old saves load unchanged)
+
+## v3.3: Career (core)
+- Menu "Career": create a golfer (name, ball color); save key ts.career, other saves untouched
+- 8-event seasons of 18-hole events vs a 39-golfer CPU field (styles, live leaderboard), 4 recurring rivals + 10 tour regulars
+- Prize money + ranking points; 1000 points promotes: Regional > Challenger > Pro > Major Series (tougher fields, longer tees)
+- Courses unlock by tier (famous ones in Major Series); career screen with rank, earnings, wins, trophies, season history
+- Career starts at Reggie difficulty (Hall of Fame level-ups come in v3.5, pro shop in v3.4)
