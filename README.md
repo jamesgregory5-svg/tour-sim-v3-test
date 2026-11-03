@@ -35,3 +35,12 @@ A live leaderboard while you play, named CPU golfers with their own styles, and 
 - Gear and prize money carry over; back to Regional tier, unlocked courses stay
 - Hall of Fame list on the career screen; TOUR SIM CLEARED screen at Woods
 - Equipped-gear chip (level, gear, stats for current club) under the live leaderboard in career rounds
+
+## v3.6: Fix and tune pass
+- Career swing meter at Woods toned to 2.1x (levels .6/.82/1.1/1.42/1.75/2.1x)
+- CPU fields rebalanced by simulation: winning score about -3 (Reggie Regional) up to about -12 (Woods Major); rivals in the top 3 about 80% of events
+- Trophy dates use local time
+- Live leaderboard sits under the minimap and starts collapsed on small/portrait screens
+- Cart Part Only minimap spreads overlapping dots at the start
+- Trophy shelf button survives tournament-setup redraws; no duplicate Resume round for career events (Career button resumes); a real tournament in progress is no longer hidden by a career round
+- Career ball trail comes only from the pro-shop trail (new career = no trail); regular rounds keep the Customization trail

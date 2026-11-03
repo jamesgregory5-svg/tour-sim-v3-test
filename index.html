@@ -197,7 +197,7 @@ td.l,th.l{text-align:left}
 <div id="ldr" style="position:fixed;inset:0;z-index:9999;background:#0b1014;display:flex;align-items:center;justify-content:center;color:#e8eef2;font:700 28px/1 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;letter-spacing:.18em;transition:opacity .6s ease">LOADING…</div><div id="fps"></div><div id="gimme"><div class="gb"><b>GIMME</b><span id="gimmeS"></span></div></div>
 <script type="text/x-tour" id="gsrc">
 'use strict';
-const VERSION='v3.5';
+const VERSION='v3.6';
 const TAU=Math.PI*2,DEG=Math.PI/180;
 const clamp=(v,a,b)=>v<a?a:v>b?b:v,lerp=(a,b,t)=>a+(b-a)*t,smooth=t=>t*t*(3-2*t);
 const pad=n=>String(n).padStart(2,'0');
@@ -2524,7 +2524,7 @@ function tnNew(cid,tee){const seed=(Date.now()^Math.floor(Math.random()*1e9))>>>
   return{v:1,cid,tee,seed,diff:d,skill:sk,mu,day:0,field,me:[],done:false}}
 function tnLoad(){const t=store('ts.tour');return t&&t.v===1&&CID[t.cid]?t:null}
 function tnSave(t){store('ts.tour',t)}
-function tnDayTP(t,day){/* v3.2: per-golfer round to par for a day (deterministic), with the golfer's style */const R=tnRng((t.seed+day*7919)>>>0);return t.field.map(f=>{const st=TN_STYLES[tnStyleI(f.n)];return Math.max(-12,Math.min(22,Math.round(t.mu+f.o+st.m+tnGauss(R)*2.6*st.sd)))})}
+function tnDayTP(t,day){/* v3.2: per-golfer round to par for a day (deterministic), with the golfer's style */const R=tnRng((t.seed+day*7919)>>>0);return t.field.map(f=>{const st=TN_STYLES[tnStyleI(f.n)];return Math.max(t.car?-14:-12,Math.min(22,Math.round(t.mu+f.o+st.m+tnGauss(R)*2.6*st.sd)))})}
 function tnSimDay(t,day){const par=cpar(CID[t.cid],t.tee).reduce((a,b)=>a+b,0);const TP=tnDayTP(t,day);t.field.forEach((f,i)=>{if(f.sc.length>day)return;f.sc.push(par+TP[i])})}
 function tnTable(t){const par=cpar(CID[t.cid],t.tee).reduce((a,b)=>a+b,0);const days=t.me.length;const rows=t.field.map(f=>({n:f.n,sc:f.sc.slice(0,days),me:false}));rows.push({n:ownerName()||'You',sc:t.me.slice(0,days),me:true});
   for(const r of rows){r.tot=r.sc.reduce((a,b)=>a+b,0);r.tp=r.tot-par*days;r.today=r.sc.length?r.sc[r.sc.length-1]-par:0}
@@ -2552,7 +2552,7 @@ function showStandings(t,final){const T=tnTable(t);const me=T.rows.find(r=>r.me)
   $('tnM').onclick=()=>{if(final)store('ts.tour',null);showMenu()};if(!final)$('tnN').onclick=tnStart}
 {const _fr=finishRound;finishRound=function(){const r=G.round;const isT=r&&r.tour&&r.n===18;let tot=null;if(isT)tot=r.sc.reduce((a,b)=>a+b,0);const out=_fr.apply(this,arguments);
   if(isT){const t=tnLoad();if(t&&t.me.length===r.tday){t.me.push(tot);tnSimDay(t,t.me.length-1);if(t.me.length>=4)t.done=true;tnSave(t);showStandings(t,t.done)}}return out}}
-{const _sm=showMenu;showMenu=function(){const out=_sm.apply(this,arguments);try{const m=document.querySelector('#scMenu .menu');if(m&&!$('mCust')){const t=tnLoad();const sv=store('ts.round');const busy=sv&&sv.r&&sv.r.tour;
+{const _sm=showMenu;showMenu=function(){const out=_sm.apply(this,arguments);try{const m=document.querySelector('#scMenu .menu');if(m&&!$('mCust')){const t=tnLoad();const sv=store('ts.round');const busy=sv&&sv.r&&sv.r.tour&&!sv.r.car;
    const tb=document.createElement('button');tb.className='btn alt';tb.id='mTour';tb.innerHTML=t&&!t.done&&!busy?`Resume tournament<small>${esc(CID[t.cid].name)} · round ${t.me.length+1} of 4</small>`:`Tournament<small>4 rounds · 72 holes · vs a CPU field</small>`;tb.onclick=()=>{const t2=tnLoad();if(t2&&!t2.done&&!busy){showStandings(t2,false)}else showTourSetup()};
    const cb=document.createElement('button');cb.className='btn alt';cb.id='mCust';cb.innerHTML='Customization<small>Ball color · ball trail · hole explosion</small>';cb.onclick=showCustom;
    const play=$('mPlay');play.after(tb);tb.after(cb)}}catch(e){console.warn(e)}return out}}
@@ -2730,7 +2730,9 @@ function ccMapDraw(){const cv=$('ccMap');if(!cv||!CC.L)return;const g=cv.getCont
   const B=CC.mapB;const T=(x,y)=>[B.ox+(x-B.x0)*B.s,300-(B.oy+(y-B.y0)*B.s)];g.clearRect(0,0,300,300);g.lineJoin='round';g.lineCap='round';
   g.beginPath();L.P.forEach((p,i)=>{const q=T(p[0],p[1]);i?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1])});g.closePath();g.strokeStyle='rgba(255,255,255,.85)';g.lineWidth=14;g.stroke();g.strokeStyle='#6b6e72';g.lineWidth=9;g.stroke();
   {const p=L.P[0],h=L.H[0],a=T(p[0]-Math.sin(h)*7,p[1]+Math.cos(h)*7),b=T(p[0]+Math.sin(h)*7,p[1]-Math.cos(h)*7);g.strokeStyle='#fff';g.lineWidth=5;g.beginPath();g.moveTo(a[0],a[1]);g.lineTo(b[0],b[1]);g.stroke()}
-  for(const c of CC.carts){const q=T(c.x,c.y);const col=(CC_COLS[c.col]||[1,1,1]).map(v=>Math.round(v*255)).join(',');g.beginPath();g.arc(q[0],q[1],c.me?11:8,0,Math.PI*2);g.fillStyle=`rgb(${col})`;g.fill();g.lineWidth=c.me?4:2;g.strokeStyle=c.me?'#fff':'#111';g.stroke()}}
+  const Q=CC.carts.map(c=>{const q=T(c.x,c.y);return{c,x:q[0],y:q[1],x0:q[0],y0:q[1]}});for(let it=0;it<6;it++)for(let i=0;i<Q.length;i++)for(let j=i+1;j<Q.length;j++){const a=Q[i],b=Q[j];let dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy);const m=24;if(d<m){if(d<.01){dx=Math.cos(i+j*2.1);dy=Math.sin(i+j*2.1);d=1}const k=(m-d)/2/d;a.x-=dx*k;a.y-=dy*k;b.x+=dx*k;b.y+=dy*k}}
+  Q.sort((a,b)=>(a.c.me?1:0)-(b.c.me?1:0));for(const P of Q){if(Math.hypot(P.x-P.x0,P.y-P.y0)>2){g.strokeStyle='rgba(255,255,255,.6)';g.lineWidth=2;g.beginPath();g.moveTo(P.x0,P.y0);g.lineTo(P.x,P.y);g.stroke()}}
+  for(const P of Q){const c=P.c;const q=[P.x,P.y];const col=(CC_COLS[c.col]||[1,1,1]).map(v=>Math.round(v*255)).join(',');g.beginPath();g.arc(q[0],q[1],c.me?11:8,0,Math.PI*2);g.fillStyle=`rgb(${col})`;g.fill();g.lineWidth=c.me?4:2;g.strokeStyle=c.me?'#fff':'#111';g.stroke()}}
 function ccHudUpd(){ccMapDraw();{const r=$('ccRear');const v=CC.keys.look?'block':'none';if(r.style.display!==v)r.style.display=v}const o=ccOrder();const me=CC.me;const pos=o.indexOf(me)+1;$('ccPos').textContent=pos+'/'+o.length;$('ccLap').textContent='Lap '+Math.min(CC.lapsN,Math.max(1,me.laps.length+1))+'/'+CC.lapsN;
   const t=me.fin!=null?me.fin:Math.max(0,CC.t);$('ccTime').textContent=ccFmt(t);$('ccLapT').textContent='Lap '+ccFmt(me.lapN!=null&&me.fin==null?CC.t-me.lapStart:(me.laps[me.laps.length-1]||0));
   const sb=(ccStore().best[CC.T.id]||{}).lap;const b=[me.best,sb].filter(x=>x!=null);$('ccBest').textContent=b.length?ccFmt(Math.min(...b)):'—';$('ccSpd').textContent=Math.round(Math.abs(me.v)*2.237)+' mph';
@@ -2769,6 +2771,7 @@ function showCartColors(T){const st=ccStore();let col=CC_COLS[st.col]?st.col:'re
   $('ccB').onclick=showCartTracks;s.querySelector('#ccCol').onclick=e=>{const b=e.target.closest('button');if(b){col=b.dataset.c;draw()}};$('ccGo').onclick=()=>{const o=ccStore();o.col=col;ccSave(o);ccStart(T,col)}};draw()}
 {const _sm2=showMenu;showMenu=function(){const out=_sm2.apply(this,arguments);try{const m=document.querySelector('#scMenu .menu');if(m&&!$('mCart')){const b=document.createElement('button');b.className='btn alt';b.id='mCart';b.innerHTML='Cart Part Only<small>Cart Chase · race CPU carts on made-up tracks</small>';b.onclick=showCartTracks;const after=$('mCust')||$('mPlay');after.after(b)}}catch(e){console.warn(e)}return out}}
 
+function crDay(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}/* v3.6: local date */
 /* ================= v3.2: Tournament extras: golfer styles, live leaderboard, trophy shelf ================= */
 const TN_STYLES=[{n:'Long hitter',m:-.3,sd:1.25},{n:'Steady putter',m:0,sd:.7},{n:'Risk taker',m:-.2,sd:1.45},{n:'Grinder',m:.2,sd:.8},{n:'Wedge wizard',m:-.1,sd:1}];
 function tnStyleI(n){let h=2166136261;for(const ch of String(n))h=Math.imul(h^ch.charCodeAt(0),16777619);return (h>>>0)%TN_STYLES.length}
@@ -2781,8 +2784,8 @@ function tnLiveRows(){const r=G.round;if(!r||!r.tour)return null;const t=tnLoad(
 function tnLiveUpd(){let el=$('tnLive');const on=G.mode==='round'&&G.round&&G.round.tour&&!G.cartOn&&$('hud')&&$('hud').classList.contains('on');
   if(!on){if(el)el.style.display='none';return}
   if(!el){el=document.createElement('div');el.id='tnLive';el.style.cssText='position:fixed;left:10px;top:162px;z-index:12;width:196px;background:rgba(10,16,20,.72);border-radius:12px;color:#e8eef2;font:600 12px/1.35 system-ui,sans-serif;padding:7px 9px;pointer-events:auto';document.body.appendChild(el);
-    el.addEventListener('click',e=>{if(e.target.closest('#tnLvT')){store('ts.tlb',store('ts.tlb')?0:1);el.dataset.k=''}})}
-  el.style.display='block';const L=tnLiveRows();if(!L)return;const col=!!store('ts.tlb');const me=L.rows.find(x=>x.me);
+    el.addEventListener('click',e=>{if(e.target.closest('#tnLvT')){store('ts.tlb',el.dataset.col==='1'?0:1);el.dataset.k=''}})}
+  el.style.display='block';const L=tnLiveRows();if(!L)return;const tv=store('ts.tlb');const sm=innerWidth<640||innerHeight<520;const col=tv===null||tv===undefined?sm:!!tv;el.dataset.col=col?'1':'0';{const mi=$('mini');const mb=mi&&mi.getBoundingClientRect();el.style.top=Math.round((mb&&mb.bottom>0?mb.bottom:150)+8)+'px';el.style.width=sm?'150px':'196px';el.style.fontSize=sm?'11px':'12px'}const me=L.rows.find(x=>x.me);
   const key=col+'|'+L.thru+'|'+L.rows.map(x=>x.n+x.tp).join();if(el.dataset.k===key)return;el.dataset.k=key;
   const top=L.rows.slice(0,5);const list=top.includes(me)?top:top.concat([me]);const tie=p=>L.rows.filter(x=>x.pos===p).length>1?'T':'';
   el.innerHTML=`<div id="tnLvT" style="display:flex;justify-content:space-between;cursor:pointer;font-weight:800;letter-spacing:.06em;font-size:11px;opacity:.9"><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:165px">${L.evn?esc(L.evn.toUpperCase()):'LEADERBOARD · R'+(L.day+1)}</span><span>${col?'▸':'▾'}</span></div>`+
@@ -2790,22 +2793,22 @@ function tnLiveUpd(){let el=$('tnLive');const on=G.mode==='round'&&G.round&&G.ro
 setInterval(()=>{try{tnLiveUpd()}catch(e){}},700);
 // ---- trophy shelf ----
 function trLoad(){const v=store('ts.trophies');return Array.isArray(v)?v.filter(x=>x&&typeof x==='object'):[]}
-function tnTrophy(t,me,c){const L=trLoad();if(L.some(x=>x.id===t.seed))return;L.push({id:t.seed,cid:t.cid,course:c.name,tp:me.tp,tot:me.tot,diff:DIFF[t.diff]?DIFF[t.diff][0]:'',date:new Date().toISOString().slice(0,10)});store('ts.trophies',L)}
+function tnTrophy(t,me,c){const L=trLoad();if(L.some(x=>x.id===t.seed))return;L.push({id:t.seed,cid:t.cid,course:c.name,tp:me.tp,tot:me.tot,diff:DIFF[t.diff]?DIFF[t.diff][0]:'',date:crDay()});store('ts.trophies',L)}
 function showTrophies(back){const L=trLoad().slice().reverse();const s=show('scSetup',`<div class="pn"><div class="hdr"><button class="ib" id="trB">‹</button><h2>Trophy shelf</h2></div>
   ${L.length?`<div class="gnote">${L.length} tournament win${L.length>1?'s':''}.</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:10px">${L.map(x=>`<div style="background:linear-gradient(180deg,#2a2412,#15130b);border:1px solid #5a4a1a;border-radius:12px;padding:10px;text-align:center"><div style="font-size:40px;line-height:1.1">🏆</div><div style="font-weight:800;margin-top:4px">${esc(x.course)}</div><div style="color:#ffd24a;font-weight:800">${tnFmt(x.tp)} (${x.tot})</div><div style="opacity:.7;font-size:12px">${esc(x.diff)} · ${esc(x.date)}</div></div>`).join('')}</div>`
   :`<div class="gnote">No trophies yet. Win a tournament to put one on the shelf.</div><div style="text-align:center;font-size:64px;opacity:.25;margin:20px 0">🏆</div>`}</div>`);$('trB').onclick=back||showMenu}
 {const _ts=showTourSetup;showTourSetup=function(){const out=_ts.apply(this,arguments);try{const h=document.querySelector('#scSetup .hdr');if(h&&!$('trShelf')){const b=document.createElement('button');b.className='btn alt';b.id='trShelf';b.style.marginTop='8px';b.innerHTML=`Trophy shelf<small>${trLoad().length} win${trLoad().length===1?'':'s'}</small>`;b.onclick=()=>showTrophies(showTourSetup);(document.querySelector('#scSetup .gnote')||h).after(b)}}catch(e){console.warn(e)}return out}}
 
 /* ================= v3.3: Career mode (core) ================= */
-const CR_TIERS=[{n:'Regional',purse:25000,tee:-1,mu:2},{n:'Challenger',purse:80000,tee:1,mu:0},{n:'Pro',purse:300000,tee:0,mu:-1.5},{n:'Major Series',purse:1000000,tee:0,mu:-3}];
+const CR_TIERS=[{n:'Regional',purse:25000,tee:-1,mu:2},{n:'Challenger',purse:80000,tee:1,mu:1},{n:'Pro',purse:300000,tee:0,mu:0},{n:'Major Series',purse:1000000,tee:0,mu:-1}];
 const CR_COURSES=[['lookaway','fiveponds','prairie','shadowcreek','peachtree','crystal','chicago'],['bethpage','pacificdunes','oakhill','oaklandhills','muirfieldv','friars','fishers','seminole'],['sawgrass','riviera','tcc','lacc','wingedfoot','sandhills','ngla','merion'],['augusta','standrews','pebble','pinevalley','oakmont','shinnecock','cypress']];
-const CR_BASE=[4,1,-2,-4.5,-7,-9.5];/* CPU field mean (to par) per career level Reggie..Woods */
+const CR_BASE=[4,2.8,1.6,.4,-.8,-2];/* CPU field mean (to par) per career level Reggie..Woods */
 const CR_RIVALS=['Bruno Vance','Dex Harlan','Miles Okoro','Tobias Wren'];
 const CR_REGULARS=['Hank Ostrow','Jules Marchetti','Ravi Desai','Colt Brannigan','Soren Ekdahl','Mateo Rios','Gus Pelletier','Ty Abernathy','Ollie Fenwick','Kenji Sato'];
 const CR_EVN=['Open','Classic','Invitational','Championship'];const CR_SEASON=8,CR_PROMO=1000;
 function crLoad(){const v=store('ts.career');return v&&v.v===1&&typeof v.name==='string'?v:null}
 function crSave(C){store('ts.career',C)}
-function crNew(name,ball){return{v:1,name:String(name||'Player').slice(0,16),ball:BALL_COLS[ball]?ball:'white',lvl:0,season:1,tier:0,maxT:0,tpts:0,spts:0,ev:0,cash:0,earn:0,wins:0,rp:{},hist:[],res:[],cur:null,made:new Date().toISOString().slice(0,10)}}
+function crNew(name,ball){return{v:1,name:String(name||'Player').slice(0,16),ball:BALL_COLS[ball]?ball:'white',lvl:0,season:1,tier:0,maxT:0,tpts:0,spts:0,ev:0,cash:0,earn:0,wins:0,rp:{},hist:[],res:[],cur:null,made:crDay()}}
 function crCourseOK(C,cid){return CR_COURSES.some((L,i)=>i<=C.maxT&&L.includes(cid))}
 function crEvent(C){const L=CR_COURSES[C.tier];const R=tnRng((C.season*131+C.ev*977+C.tier*31+7)>>>0);const cid=L[Math.floor(R()*L.length)];const c=CID[cid];const T=CR_TIERS[C.tier];
   const tee=T.tee<0?c.tees.length-1:Math.min(T.tee,c.tees.length-1);const major=C.tier===3;
@@ -2830,7 +2833,7 @@ function crFinish(tot){const C=crLoad();if(!C||!C.cur)return;const t=C.cur,E=t.e
   let pos=me.pos;let note='';if(pos===1&&ties>1){const R=tnRng(t.seed^0x5ee);if(R()<.5)note='You won a sudden-death playoff!';else{pos=2;note='You lost a sudden-death playoff.'}}
   const pts=crPts(pos),pay=crPay(pos,E.purse);C.cash+=pay;C.earn+=pay;C.tpts+=pts;C.spts+=pts;const win=pos===1;if(win)C.wins++;
   for(const x of T.rows)if(x.rv||x.rg)C.rp[x.n]=(C.rp[x.n]||0)+crPts(x.pos);
-  if(win){try{const L=trLoad();if(!L.some(z=>z.id===t.seed)){L.push({id:t.seed,cid:t.cid,course:CID[t.cid].name,tp:me.tp,tot,diff:DIFF[C.lvl][0],date:new Date().toISOString().slice(0,10),car:1,ev:E.name});store('ts.trophies',L)}}catch(e){}}
+  if(win){try{const L=trLoad();if(!L.some(z=>z.id===t.seed)){L.push({id:t.seed,cid:t.cid,course:CID[t.cid].name,tp:me.tp,tot,diff:DIFF[C.lvl][0],date:crDay(),car:1,ev:E.name});store('ts.trophies',L)}}catch(e){}}
   const res={s:C.season,ev:C.ev+1,name:E.name,cid:t.cid,tier:C.tier,pos,tie:ties>1&&!note,tp:me.tp,tot,pts,pay};C.res.push(res);if(C.res.length>200)C.res.shift();
   let promo='';if(C.tier<3&&C.tpts>=CR_PROMO){C.tier++;C.tpts=0;C.maxT=Math.max(C.maxT,C.tier);promo=`Promoted to the ${CR_TIERS[C.tier].n} tier! New courses unlocked: ${CR_COURSES[C.tier].map(id=>CID[id].name.replace(/ \(.*\)$/,'')).join(', ')}.`}
   C.cur=null;C.ev++;let send=null,hof=null;if(win&&E.major)hof='Won the '+E.name.replace(/^Major: /,'')+' (a Major)';if(hof||C.ev>=CR_SEASON){send=crSeasonEnd(C);if(!hof&&send.rank===1)hof='Finished No. 1 in the season '+send.s+' rankings'}if(hof&&typeof crHof==='function')hof=crHof(C,hof,send);else hof=null;crSave(C);crResult(T,me,res,note,promo,send,hof)}
@@ -2893,12 +2896,12 @@ function crStats(C,ci){const a=crEq(C,crSlotFor(ci)),b=crEq(C,'b');const z={pow:
    else{const sh=SHAPES[G.shape]||SHAPES[0];const ka=1-.03*z.acc,kc=1-.05*z.con;if(Number.isFinite(inp.face))inp.face=sh.f+(inp.face-sh.f)*ka;if(Number.isFinite(inp.path))inp.path=sh.p+(inp.path-sh.p)*ka;
      if(Number.isFinite(inp.sx))inp.sx*=kc;if(Number.isFinite(inp.sy))inp.sy*=kc;if(Number.isFinite(inp.power))inp.power*=1+.01*z.pow}}}return _x.apply(this,arguments)}}
 {const _t=custTrailRGB;custTrailRGB=function(){const r=G.round;if(r&&r.car){const C=crLoad();const t=C&&crGear(C)&&crEq(C,'t');if(t)return t.rgb}return _t()}}
-{const _o=custTrailOn;custTrailOn=function(){const r=G.round;if(r&&r.car){const C=crLoad();if(C&&crGear(C)&&crEq(C,'t'))return true}return _o()}}
+{const _o=custTrailOn;custTrailOn=function(){const r=G.round;if(r&&r.car){const C=crLoad();return !!(C&&crGear(C)&&crEq(C,'t'))}return _o()}}/* v3.6: career trail = only the pro-shop trail */
 function crBuy(id){const C=crLoad();const it=SHOPI[id];if(!C||!it)return false;crGear(C);if(C.own.includes(id))return false;if(C.cash<it.p)return false;C.cash-=it.p;C.own.push(id);C.eq[it.s]=id;crSave(C);return true}
 function crEquip(s,id){const C=crLoad();if(!C)return;crGear(C);if(id&&!C.own.includes(id))return;if(id)C.eq[s]=id;else delete C.eq[s];crSave(C)}
 function showShop(slot){const C=crLoad();if(!C){showCareer();return}crGear(C);slot=slot||'w';const bar=(k,v,col)=>`<div style="display:flex;align-items:center;gap:6px;font-size:11px"><span style="width:82px;opacity:.7">${k}</span><span style="flex:1;height:6px;background:#22303a;border-radius:3px;overflow:hidden"><span style="display:block;height:100%;width:${v*20}%;background:${col}"></span></span><span style="width:22px;text-align:right">+${v}</span></div>`;
   const items=SHOP.filter(x=>x.s===slot);const cur=crEq(C,slot);
-  const card=x=>{const own=x?C.own.includes(x.id):true,on=x?cur===x:!cur;const nm=x?(x.b?`<span style="opacity:.7">${esc(x.b)}</span> `:'')+esc(x.n):'Stock '+(slot==='t'?'trail (your Customization setting)':slot==='b'?'ball':'set');
+  const card=x=>{const own=x?C.own.includes(x.id):true,on=x?cur===x:!cur;const nm=x?(x.b?`<span style="opacity:.7">${esc(x.b)}</span> `:'')+esc(x.n):(slot==='t'?'No trail':'Stock '+(slot==='b'?'ball':'set'));
     const stats=x&&x.s!=='t'?bar('Accuracy',x.acc,'#3fe0b0')+bar('Power',x.pow,'#ffb84a')+bar('Consistency',x.con,'#7ab8ff'):x?`<div style="display:flex;align-items:center;gap:8px;font-size:12px;opacity:.8"><span style="width:40px;height:5px;border-radius:3px;background:rgb(${x.rgb.map(v=>Math.round(v*255)).join(',')})"></span>Cosmetic, no stats</div>`:(slot==='t'?'':bar('Accuracy',0,'#3fe0b0')+bar('Power',0,'#ffb84a')+bar('Consistency',0,'#7ab8ff'));
     const btn=on?'<b style="color:#3fe0b0">EQUIPPED</b>':own?`<button class="btn alt" data-eq="${x?x.id:''}" style="padding:6px 10px;margin:0;width:auto">Equip</button>`:`<button class="btn" data-buy="${x.id}" style="padding:6px 10px;margin:0;width:auto;${C.cash<x.p?'opacity:.45':''}">${crMoney(x.p)}</button>`;
     return`<div style="background:#121a20;border-radius:12px;padding:9px 10px;${on?'outline:2px solid #3fe0b0':''}"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div style="font-weight:800;font-size:14px">${nm}</div>${btn}</div><div style="margin-top:6px;display:grid;gap:3px">${stats}</div></div>`};
@@ -2911,9 +2914,9 @@ function showShop(slot){const C=crLoad();if(!C){showCareer();return}crGear(C);sl
 {const _sc=showCareer;showCareer=function(){const out=_sc.apply(this,arguments);try{const p=$('crPlay');const C=crLoad();if(p&&C&&!$('crShop')){crGear(C);const b=document.createElement('button');b.className='btn alt';b.id='crShop';b.style.marginTop='8px';const n=SHOP_SLOTS.filter(([k])=>crEq(C,k)).length;b.innerHTML=`Pro shop<small>${crMoney(C.cash)} to spend · ${n} upgrade${n===1?'':'s'} equipped</small>`;b.onclick=()=>showShop();p.after(b)}}catch(e){console.warn(e)}return out}}
 
 /* ================= v3.5: Career Hall of Fame + level ups + gear indicator ================= */
-const CR_METER=[.6,.82,1.1,1.42,1.8,2.25];/* career swing meter speed per level: each Hall of Fame = ~30% faster */
+const CR_METER=[.6,.82,1.1,1.42,1.75,2.1];/* career swing meter speed per level: each Hall of Fame = ~30% faster */
 function crMeterK(){const r=G.round;if(!(r&&r.car))return 0;const C=crLoad();return C?CR_METER[C.lvl]||0:0}
-function crHof(C,why,send){C.hof=Array.isArray(C.hof)?C.hof:[];const from=C.lvl;C.hof.push({s:send?send.s:C.season,lvl:from,why,date:new Date().toISOString().slice(0,10),earn:C.earn,wins:C.wins});
+function crHof(C,why,send){C.hof=Array.isArray(C.hof)?C.hof:[];const from=C.lvl;C.hof.push({s:send?send.s:C.season,lvl:from,why,date:crDay(),earn:C.earn,wins:C.wins});
   if(C.lvl<5){C.lvl++;C.tier=0;C.tpts=0;return{why,from,to:C.lvl}}C.maxed=1;C.tier=0;C.tpts=0;return{why,from,to:5,max:1}}
 function showHofScreen(h){const C=crLoad();const n=(C.hof||[]).length;
   if(h.max){show('scSetup',`<div class="pn" id="crHofS" style="text-align:center"><div style="font-size:72px;line-height:1;margin-top:6px">🏆⭐🏆</div><div style="font:900 34px/1.1 system-ui,sans-serif;color:#ffd24a;margin-top:8px">TOUR SIM CLEARED!</div>
@@ -2930,8 +2933,12 @@ function showHofScreen(h){const C=crLoad();const n=(C.hof||[]).length;
 function crGearChip(){let el=$('crGearI');const r=G.round;const lv=$('tnLive');const on=r&&r.car&&G.mode==='round'&&lv&&lv.style.display!=='none';if(!on){if(el)el.style.display='none';return}
   const C=crLoad();if(!C)return;crGear(C);const z=crStats(C,G.club);const sl=crSlotFor(G.club);const it=crEq(C,sl),bl=crEq(C,'b');
   if(!el){el=document.createElement('div');el.id='crGearI';el.style.cssText='position:fixed;left:10px;z-index:12;width:196px;background:rgba(10,16,20,.72);border-radius:10px;color:#e8eef2;font:600 11px/1.35 system-ui,sans-serif;padding:5px 9px;pointer-events:none;box-sizing:border-box';document.body.appendChild(el)}
-  el.style.top=(lv.offsetTop+lv.offsetHeight+6)+'px';el.style.display='block';const txt=`<b>${DIFF[C.lvl][0]}</b> · ${it?esc(it.n.replace(/ (Driver|Irons|Wedges|Putter)$/,'')):'Stock'}${bl?' · '+esc(bl.n.replace(/ Ball$/,'')):''}<br><span style="opacity:.75">ACC +${z.acc} · PWR +${z.pow} · CON +${z.con}</span>`;if(el.innerHTML!==txt)el.innerHTML=txt}
+  el.style.top=(lv.offsetTop+lv.offsetHeight+6)+'px';el.style.width=lv.style.width||'196px';el.style.display='block';const txt=`<b>${DIFF[C.lvl][0]}</b> · ${it?esc(it.n.replace(/ (Driver|Irons|Wedges|Putter)$/,'')):'Stock'}${bl?' · '+esc(bl.n.replace(/ Ball$/,'')):''}<br><span style="opacity:.75">ACC +${z.acc} · PWR +${z.pow} · CON +${z.con}</span>`;if(el.innerHTML!==txt)el.innerHTML=txt}
 setInterval(()=>{try{crGearChip()}catch(e){}},700);
+
+/* ================= v3.6: fix pass: trophy-shelf button on every tournament-setup redraw; no duplicate resume for career rounds ================= */
+{const _show=show;show=function(id,html){const s=_show.apply(this,arguments);try{if(id==='scSetup'&&s.querySelector('#tnB')&&!s.querySelector('#trShelf')&&typeof showTrophies==='function'){const b=document.createElement('button');b.className='btn alt';b.id='trShelf';b.style.marginTop='8px';const n=trLoad().length;b.innerHTML=`Trophy shelf<small>${n} win${n===1?'':'s'}</small>`;b.onclick=()=>showTrophies(showTourSetup);(s.querySelector('.gnote')||s.querySelector('.hdr')).after(b)}}catch(e){console.warn(e)}return s}}
+{const _sm=showMenu;showMenu=function(){const out=_sm.apply(this,arguments);try{const sv=store('ts.round');if(sv&&sv.r&&sv.r.car){const r=$('mRes');if(r)r.remove();const b=$('mCareer');if(b){b.className='btn';const s=b.querySelector('small');if(s)s.textContent='Event in progress · hole '+(sv.r.i+1)+' · tap to resume'}}}catch(e){console.warn(e)}return out}}
 
 </script>
 <script>(function(){function boot(){var s=document.createElement('script');s.text=document.getElementById('gsrc').textContent;document.body.appendChild(s)}
