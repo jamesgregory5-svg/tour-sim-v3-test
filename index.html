@@ -197,7 +197,7 @@ td.l,th.l{text-align:left}
 <div id="ldr" style="position:fixed;inset:0;z-index:9999;background:#0b1014;display:flex;align-items:center;justify-content:center;color:#e8eef2;font:700 28px/1 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;letter-spacing:.18em;transition:opacity .6s ease">LOADING…</div><div id="fps"></div><div id="gimme"><div class="gb"><b>GIMME</b><span id="gimmeS"></span></div></div>
 <script type="text/x-tour" id="gsrc">
 'use strict';
-const VERSION='v3.6';
+const VERSION='v3.7';
 const TAU=Math.PI*2,DEG=Math.PI/180;
 const clamp=(v,a,b)=>v<a?a:v>b?b:v,lerp=(a,b,t)=>a+(b-a)*t,smooth=t=>t*t*(3-2*t);
 const pad=n=>String(n).padStart(2,'0');
@@ -2785,7 +2785,7 @@ function tnLiveUpd(){let el=$('tnLive');const on=G.mode==='round'&&G.round&&G.ro
   if(!on){if(el)el.style.display='none';return}
   if(!el){el=document.createElement('div');el.id='tnLive';el.style.cssText='position:fixed;left:10px;top:162px;z-index:12;width:196px;background:rgba(10,16,20,.72);border-radius:12px;color:#e8eef2;font:600 12px/1.35 system-ui,sans-serif;padding:7px 9px;pointer-events:auto';document.body.appendChild(el);
     el.addEventListener('click',e=>{if(e.target.closest('#tnLvT')){store('ts.tlb',el.dataset.col==='1'?0:1);el.dataset.k=''}})}
-  el.style.display='block';const L=tnLiveRows();if(!L)return;const tv=store('ts.tlb');const sm=innerWidth<640||innerHeight<520;const col=tv===null||tv===undefined?sm:!!tv;el.dataset.col=col?'1':'0';{const mi=$('mini');const mb=mi&&mi.getBoundingClientRect();el.style.top=Math.round((mb&&mb.bottom>0?mb.bottom:150)+8)+'px';el.style.width=sm?'150px':'196px';el.style.fontSize=sm?'11px':'12px'}const me=L.rows.find(x=>x.me);
+  el.style.display='block';const L=tnLiveRows();if(!L)return;const tv=store('ts.tlb');const sm=innerWidth<640;const col=tv===null||tv===undefined?sm:!!tv;el.dataset.col=col?'1':'0';{const mi=$('mini');const mb=mi&&mi.getBoundingClientRect();el.style.top=Math.round((mb&&mb.bottom>0?mb.bottom:150)+8)+'px';el.style.width=sm?'150px':'196px';el.style.fontSize=sm?'11px':'12px'}const me=L.rows.find(x=>x.me);
   const key=col+'|'+L.thru+'|'+L.rows.map(x=>x.n+x.tp).join();if(el.dataset.k===key)return;el.dataset.k=key;
   const top=L.rows.slice(0,5);const list=top.includes(me)?top:top.concat([me]);const tie=p=>L.rows.filter(x=>x.pos===p).length>1?'T':'';
   el.innerHTML=`<div id="tnLvT" style="display:flex;justify-content:space-between;cursor:pointer;font-weight:800;letter-spacing:.06em;font-size:11px;opacity:.9"><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:165px">${L.evn?esc(L.evn.toUpperCase()):'LEADERBOARD · R'+(L.day+1)}</span><span>${col?'▸':'▾'}</span></div>`+
@@ -2825,7 +2825,7 @@ function crMakeField(C,E){const seed=(Date.now()^Math.floor(Math.random()*1e9))>
 {const _b=custBallRGB;custBallRGB=function(){const r=G.round;if(r&&r.car){const C=crLoad();if(C&&BALL_COLS[C.ball])return BALL_COLS[C.ball]}return _b()}}
 {const _l=tnLoad;tnLoad=function(){const r=G.round;if(r&&r.car){const C=crLoad();return C&&C.cur}return _l()}}
 function crStart(){const C=crLoad();if(!C)return;if(!C.cur){C.cur=crMakeField(C,crEvent(C));crSave(C)}const t=C.cur;startRound(t.cid,t.tee,0,18,[{name:C.name,owner:1}],0,typeof todKey==='function'?todKey():undefined);if(G.round){G.round.car=1;G.round.tour=1;G.round.tday=0;store('ts.round',{r:G.round,hs:null})}}
-{const _fr=finishRound;finishRound=function(){const r=G.round;if(!(r&&r.car&&r.n===18))return _fr.apply(this,arguments);const tot=r.sc.reduce((a,b)=>a+b,0);delete r.tour;const out=_fr.apply(this,arguments);try{crFinish(tot)}catch(e){console.warn('career',e)}return out}}
+{const _fr=finishRound;finishRound=function(){const r=G.round;if(!(r&&r.car&&r.n===18))return _fr.apply(this,arguments);const tot=r.sc.reduce((a,b)=>a+b,0);try{const CP=cpar(CID[r.cid],r.tee);let fw=0,fwN=0,gir=0,pt=0,bd=0;for(let i=0;i<18;i++){if(CP[i]>3){fwN++;if(r.fir[i])fw++}if(r.gir[i])gir++;pt+=r.pt[i]||0;if(r.sc[i]&&r.sc[i]<CP[i])bd++}G.crRd={tp:tot-CP.reduce((a,b)=>a+b,0),fw,fwN,gir,pt,bd}}catch(e){G.crRd=null}delete r.tour;const out=_fr.apply(this,arguments);try{crFinish(tot)}catch(e){console.warn('career',e)}return out}}
 function crTable(t,tot){const par=cpar(CID[t.cid],t.tee).reduce((a,b)=>a+b,0);const TP=tnDayTP(t,0);const C=crLoad();
   const rows=t.field.map((f,i)=>({n:f.n,tp:TP[i],rv:f.rv,rg:f.rg}));rows.push({n:C.name,tp:tot-par,me:true});rows.sort((a,b)=>a.tp-b.tp||(a.me?-1:b.me?1:0)||a.n.localeCompare(b.n));
   let pos=0;rows.forEach((x,i)=>{if(i===0||x.tp!==rows[i-1].tp)pos=i+1;x.pos=pos});return{rows,par}}
@@ -2834,7 +2834,7 @@ function crFinish(tot){const C=crLoad();if(!C||!C.cur)return;const t=C.cur,E=t.e
   const pts=crPts(pos),pay=crPay(pos,E.purse);C.cash+=pay;C.earn+=pay;C.tpts+=pts;C.spts+=pts;const win=pos===1;if(win)C.wins++;
   for(const x of T.rows)if(x.rv||x.rg)C.rp[x.n]=(C.rp[x.n]||0)+crPts(x.pos);
   if(win){try{const L=trLoad();if(!L.some(z=>z.id===t.seed)){L.push({id:t.seed,cid:t.cid,course:CID[t.cid].name,tp:me.tp,tot,diff:DIFF[C.lvl][0],date:crDay(),car:1,ev:E.name});store('ts.trophies',L)}}catch(e){}}
-  const res={s:C.season,ev:C.ev+1,name:E.name,cid:t.cid,tier:C.tier,pos,tie:ties>1&&!note,tp:me.tp,tot,pts,pay};C.res.push(res);if(C.res.length>200)C.res.shift();
+  const spn=typeof crSponsorPay==='function'?crSponsorPay(C,E,pos,G.crRd):null;if(spn&&spn.pay){C.cash+=spn.pay;C.earn+=spn.pay}const res={spn,s:C.season,ev:C.ev+1,name:E.name,cid:t.cid,tier:C.tier,pos,tie:ties>1&&!note,tp:me.tp,tot,pts,pay};C.res.push(res);if(C.res.length>200)C.res.shift();
   let promo='';if(C.tier<3&&C.tpts>=CR_PROMO){C.tier++;C.tpts=0;C.maxT=Math.max(C.maxT,C.tier);promo=`Promoted to the ${CR_TIERS[C.tier].n} tier! New courses unlocked: ${CR_COURSES[C.tier].map(id=>CID[id].name.replace(/ \(.*\)$/,'')).join(', ')}.`}
   C.cur=null;C.ev++;let send=null,hof=null;if(win&&E.major)hof='Won the '+E.name.replace(/^Major: /,'')+' (a Major)';if(hof||C.ev>=CR_SEASON){send=crSeasonEnd(C);if(!hof&&send.rank===1)hof='Finished No. 1 in the season '+send.s+' rankings'}if(hof&&typeof crHof==='function')hof=crHof(C,hof,send);else hof=null;crSave(C);crResult(T,me,res,note,promo,send,hof)}
 function crRank(C){const L=[{n:C.name,p:C.spts,me:true}].concat([...CR_RIVALS,...CR_REGULARS].map(n=>({n,p:C.rp[n]||0,rv:CR_RIVALS.includes(n)})));L.sort((a,b)=>b.p-a.p||(a.me?-1:b.me?1:0));L.forEach((x,i)=>x.pos=i+1);return L}
@@ -2846,7 +2846,7 @@ function crOrd(n){const s=['th','st','nd','rd'],v=n%100;return n+(s[(v-20)%10]||
 function crResult(T,me,res,note,promo,send,hof){const C=crLoad();const top=T.rows.slice(0,10);const list=top.includes(me)?top:top.concat([me]);const tie=p=>T.rows.filter(x=>x.pos===p).length>1?'T':'';
   const s=show('scSetup',`<div class="pn" id="crRes"><div class="hdr"><h2>${esc(res.name)}</h2></div>
   <div style="text-align:center;margin:6px 0 12px">${res.pos===1?'<div style="font-size:56px;line-height:1">🏆</div><div style="font:900 30px/1.1 system-ui,sans-serif;color:#ffd24a">CHAMPION!</div>':`<div style="font:900 26px/1.1 system-ui,sans-serif">You finished ${res.tie?'T':''}${crOrd(res.pos)}</div>`}
-  <div style="margin-top:6px">${tnFmt(res.tp)} (${res.tot}) · <b style="color:#3fe0b0">+${crMoney(res.pay)}</b> · <b>+${res.pts} pts</b>${note?' · '+note:''}</div>${promo?`<div style="margin-top:8px;color:#ffd24a;font-weight:800">${esc(promo)}</div>`:''}
+  <div style="margin-top:6px">${tnFmt(res.tp)} (${res.tot}) · <b style="color:#3fe0b0">+${crMoney(res.pay)}</b> · <b>+${res.pts} pts</b>${note?' · '+note:''}</div>${res.spn?`<div style="margin-top:6px;${res.spn.pay?'color:#3fe0b0;font-weight:800':'opacity:.75'}">${esc(res.spn.n)}: ${esc(res.spn.goal)} ${res.spn.pay?'✓ bonus +'+crMoney(res.spn.pay):'✗ ('+esc(res.spn.got)+'), no bonus'}</div>`:''}${promo?`<div style="margin-top:8px;color:#ffd24a;font-weight:800">${esc(promo)}</div>`:''}
   ${send?`<div style="margin-top:8px;font-weight:800">Season ${send.s} complete: ranked No. ${send.rank} · ${send.wins} win${send.wins===1?'':'s'} · ${crMoney(send.earn)}</div>`:''}</div>
   <table style="width:100%;border-collapse:collapse;font-size:14px;text-align:center"><tr style="opacity:.7"><th>Pos</th><th style="text-align:left">Player</th><th>Score</th></tr>${list.map(x=>`<tr style="${x.me?'background:rgba(63,224,176,.18);font-weight:800':''}"><td>${tie(x.pos)}${x.pos}</td><td style="text-align:left">${esc(x.n)}${x.me?' (you)':`<small style="opacity:.6;margin-left:6px">${x.rv?'<b style="color:#ff9a6a">RIVAL</b> · ':''}${TN_STYLES[tnStyleI(x.n)].n}</small>`}</td><td><b>${tnFmt(x.tp)}</b></td></tr>`).join('')}</table>
   ${hof?'<div style="text-align:center;margin-top:10px;font:900 22px/1.2 system-ui,sans-serif;color:#ffd24a">⭐ HALL OF FAME ⭐</div>':''}<button class="btn c" id="crBk" style="margin-top:14px">${hof?'Continue':'Career'}</button></div>`);if(res.pos===1)setTimeout(()=>custBoom(null,true),300);$('crBk').onclick=()=>{if(hof&&typeof showHofScreen==='function')showHofScreen(hof);else showCareer()}}
@@ -2933,12 +2933,33 @@ function showHofScreen(h){const C=crLoad();const n=(C.hof||[]).length;
 function crGearChip(){let el=$('crGearI');const r=G.round;const lv=$('tnLive');const on=r&&r.car&&G.mode==='round'&&lv&&lv.style.display!=='none';if(!on){if(el)el.style.display='none';return}
   const C=crLoad();if(!C)return;crGear(C);const z=crStats(C,G.club);const sl=crSlotFor(G.club);const it=crEq(C,sl),bl=crEq(C,'b');
   if(!el){el=document.createElement('div');el.id='crGearI';el.style.cssText='position:fixed;left:10px;z-index:12;width:196px;background:rgba(10,16,20,.72);border-radius:10px;color:#e8eef2;font:600 11px/1.35 system-ui,sans-serif;padding:5px 9px;pointer-events:none;box-sizing:border-box';document.body.appendChild(el)}
-  el.style.top=(lv.offsetTop+lv.offsetHeight+6)+'px';el.style.width=lv.style.width||'196px';el.style.display='block';const txt=`<b>${DIFF[C.lvl][0]}</b> · ${it?esc(it.n.replace(/ (Driver|Irons|Wedges|Putter)$/,'')):'Stock'}${bl?' · '+esc(bl.n.replace(/ Ball$/,'')):''}<br><span style="opacity:.75">ACC +${z.acc} · PWR +${z.pow} · CON +${z.con}</span>`;if(el.innerHTML!==txt)el.innerHTML=txt}
+  el.style.top=(lv.offsetTop+lv.offsetHeight+6)+'px';el.style.width=lv.style.width||'196px';el.style.display='block';const txt=`<b>${DIFF[C.lvl][0]}</b> · ${it?esc(it.n.replace(/ (Driver|Irons|Wedges|Putter)$/,'')):'Stock'}${bl?' · '+esc(bl.n.replace(/ Ball$/,'')):''}<br><span style="opacity:.75">ACC +${z.acc} · PWR +${z.pow} · CON +${z.con}</span>${typeof crSpon==='function'&&crSpon(C)?`<br><span style="color:#ffd24a">${esc(crSpon(C).n)}: ${esc(crSpon(C).goal)}</span>`:''}`;if(el.innerHTML!==txt)el.innerHTML=txt}
 setInterval(()=>{try{crGearChip()}catch(e){}},700);
 
 /* ================= v3.6: fix pass: trophy-shelf button on every tournament-setup redraw; no duplicate resume for career rounds ================= */
 {const _show=show;show=function(id,html){const s=_show.apply(this,arguments);try{if(id==='scSetup'&&s.querySelector('#tnB')&&!s.querySelector('#trShelf')&&typeof showTrophies==='function'){const b=document.createElement('button');b.className='btn alt';b.id='trShelf';b.style.marginTop='8px';const n=trLoad().length;b.innerHTML=`Trophy shelf<small>${n} win${n===1?'':'s'}</small>`;b.onclick=()=>showTrophies(showTourSetup);(s.querySelector('.gnote')||s.querySelector('.hdr')).after(b)}}catch(e){console.warn(e)}return s}}
 {const _sm=showMenu;showMenu=function(){const out=_sm.apply(this,arguments);try{const sv=store('ts.round');if(sv&&sv.r&&sv.r.car){const r=$('mRes');if(r)r.remove();const b=$('mCareer');if(b){b.className='btn';const s=b.querySelector('small');if(s)s.textContent='Event in progress · hole '+(sv.r.i+1)+' · tap to resume'}}}catch(e){console.warn(e)}return out}}
+
+/* ================= v3.7: Career sponsors (one deal per season; bonus per event when the goal is met) ================= */
+const SPONSORS=[
+ {id:'birdiebank',n:'Birdie Bank',goal:'Break par',b:3000,ok:(d,p)=>d.tp<0,got:d=>tnFmt(d.tp)},
+ {id:'fairwayfirst',n:'FairwayFirst Insurance',goal:'Hit 10+ fairways',b:2500,ok:d=>d.fw>=10,got:d=>d.fw+' of '+d.fwN+' fairways'},
+ {id:'greenlight',n:'GreenLight Energy',goal:'Hit 12+ greens in regulation',b:3500,ok:d=>d.gir>=12,got:d=>d.gir+' greens'},
+ {id:'rollright',n:'RollRight Grips',goal:'30 putts or fewer',b:3000,ok:d=>d.pt<=30,got:d=>d.pt+' putts'},
+ {id:'topten',n:'TopTen Timepieces',goal:'Finish in the top 10',b:4500,ok:(d,p)=>p<=10,got:(d,p)=>crOrd(p)+' place'},
+ {id:'blitzcola',n:'Blitz Cola',goal:'Make 4+ birdies or better',b:4000,ok:d=>d.bd>=4,got:d=>d.bd+' birdies'},
+ {id:'champs',n:'Champion Motors',goal:'Win the event',b:12000,ok:(d,p)=>p===1,got:(d,p)=>crOrd(p)+' place'}];
+function crSponMult(C){const P=CR_TIERS[C.tier].purse*(1+.25*C.lvl);return Math.pow(P/25000,.8)}
+function crSponBonus(C,s){return Math.round(s.b*crSponMult(C)/100)*100}
+function crSpon(C){const sp=C&&C.spon;if(!sp||sp.s!==C.season)return null;return SPONSORS.find(x=>x.id===sp.id)||null}
+function crSponsorPay(C,E,pos,d){const s=crSpon(C);if(!s||!d)return null;const ok=!!s.ok(d,pos);return{n:s.n,goal:s.goal,pay:ok?crSponBonus(C,s):0,got:s.got(d,pos)}}
+function showSponsors(){const C=crLoad();if(!C){showCareer();return}const cur=crSpon(C);
+  const s=show('scSetup',`<div class="pn" id="spScr"><div class="hdr"><button class="ib" id="spB">‹</button><h2>Sponsor deal · season ${C.season}</h2></div>
+  <div class="gnote">Sign one sponsor for the season. After every event that meets the goal, the bonus is added to your prize money. Bonuses grow with your tier and level. ${cur?'You are signed with <b>'+esc(cur.n)+'</b> for this season.':'You can sign until your first event of the season.'}</div>
+  <div style="display:grid;gap:8px;margin-top:10px">${SPONSORS.map(x=>`<div style="background:#121a20;border-radius:12px;padding:10px;display:flex;justify-content:space-between;align-items:center;gap:8px;${cur===x?'outline:2px solid #3fe0b0':''}"><div><div style="font-weight:800">${esc(x.n)}</div><div style="font-size:13px;opacity:.8">${esc(x.goal)} → <b style="color:#3fe0b0">${crMoney(crSponBonus(C,x))}</b> per event</div></div>${cur===x?'<b style="color:#3fe0b0">SIGNED</b>':!cur&&C.ev===0?`<button class="btn" data-sp="${x.id}" style="padding:6px 12px;margin:0;width:auto">Sign</button>`:''}</div>`).join('')}</div></div>`);
+  $('spB').onclick=showCareer;s.querySelector('#spScr').addEventListener('click',e=>{const b=e.target.closest('[data-sp]');if(!b)return;const C2=crLoad();if(crSpon(C2)||C2.ev!==0)return;C2.spon={id:b.dataset.sp,s:C2.season};crSave(C2);showSponsors()})}
+{const _sc=showCareer;showCareer=function(){const out=_sc.apply(this,arguments);try{const p=$('crPlay');const C=crLoad();if(p&&C&&!$('crSpon')){const s=crSpon(C);const d=document.createElement('button');d.id='crSpon';d.className='btn alt';d.style.marginTop='8px';
+   d.innerHTML=s?`Sponsor: ${esc(s.n)}<small>${esc(s.goal)} → ${crMoney(crSponBonus(C,s))} per event · season ${C.season}</small>`:C.ev===0?`Sign a sponsor<small>Pick a season deal before your first event</small>`:`No sponsor this season<small>Sign one at the start of next season</small>`;d.onclick=showSponsors;p.before(d)}}catch(e){console.warn(e)}return out}}
 
 </script>
 <script>(function(){function boot(){var s=document.createElement('script');s.text=document.getElementById('gsrc').textContent;document.body.appendChild(s)}

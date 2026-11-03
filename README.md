@@ -44,3 +44,9 @@ A live leaderboard while you play, named CPU golfers with their own styles, and 
 - Cart Part Only minimap spreads overlapping dots at the start
 - Trophy shelf button survives tournament-setup redraws; no duplicate Resume round for career events (Career button resumes); a real tournament in progress is no longer hidden by a career round
 - Career ball trail comes only from the pro-shop trail (new career = no trail); regular rounds keep the Customization trail
+
+## v3.7: Sponsors
+- Sign one sponsor per season (before the first event): Birdie Bank (break par), FairwayFirst Insurance (10+ fairways), GreenLight Energy (12+ GIR), RollRight Grips (30 putts or fewer), TopTen Timepieces (top 10), Blitz Cola (4+ birdies), Champion Motors (win)
+- Bonus paid after each event that meets the goal, shown on the result screen; bonuses scale with tier and level
+- Sponsor shown on the career screen and in the in-round gear chip; saved in ts.career (old careers load)
+- Desktop layout: live leaderboard expanded by default on all desktop windows (collapse default only under 640 px wide)
