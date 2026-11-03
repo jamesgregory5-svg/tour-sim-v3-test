@@ -68,3 +68,7 @@ A live leaderboard while you play, named CPU golfers with their own styles, and 
 - Career form: a top-5 finish heats you up (hot +1, max +2), outside the top 25 cools you down (cold -1, min -2), otherwise form fades one step toward neutral
 - Form adds or subtracts accuracy and consistency points only (mild: about 3% miss / 5% strike variance per point); no power effect
 - Shown on the career screen, the event result and the in-round gear chip; saved in ts.career (old careers start neutral)
+
+## v3.12: Caddie
+- Career caddie (hire once, keeps across seasons and Hall of Fame levels; prize money only): Weekend Looper $8k (putt break direction), Tour Caddie $40k (break size + uphill/downhill, plays-like yardage, +1 accuracy irons/wedges), Major Champion Caddie $150k (all that, +1 accuracy all full shots, +1 consistency putts)
+- Tips show in the career gear chip; caddie on the career screen; saved in ts.career (old careers load without a caddie)
